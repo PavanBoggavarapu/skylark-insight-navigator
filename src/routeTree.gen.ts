@@ -15,6 +15,7 @@ import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as LeadershipUpdateRouteImport } from './routes/leadership-update'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as WorkOrdersRouteImport } from './routes/work-orders'
+import { Route as ApiPublicDiagRouteImport } from './routes/api/public/_diag'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const WorkOrdersRoute = WorkOrdersRouteImport.update({
   path: '/work-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDiagRoute = ApiPublicDiagRouteImport.update({
+  id: '/api/public/_diag',
+  path: '/api/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/leadership-update': typeof LeadershipUpdateRoute
   '/pipeline': typeof PipelineRoute
   '/work-orders': typeof WorkOrdersRoute
+  '/api/public': typeof ApiPublicDiagRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/leadership-update': typeof LeadershipUpdateRoute
   '/pipeline': typeof PipelineRoute
   '/work-orders': typeof WorkOrdersRoute
+  '/api/public': typeof ApiPublicDiagRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/leadership-update': typeof LeadershipUpdateRoute
   '/pipeline': typeof PipelineRoute
   '/work-orders': typeof WorkOrdersRoute
+  '/api/public/_diag': typeof ApiPublicDiagRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/leadership-update'
     | '/pipeline'
     | '/work-orders'
+    | '/api/public'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/leadership-update'
     | '/pipeline'
     | '/work-orders'
+    | '/api/public'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/leadership-update'
     | '/pipeline'
     | '/work-orders'
+    | '/api/public/_diag'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +118,7 @@ export interface RootRouteChildren {
   LeadershipUpdateRoute: typeof LeadershipUpdateRoute
   PipelineRoute: typeof PipelineRoute
   WorkOrdersRoute: typeof WorkOrdersRoute
+  ApiPublicDiagRoute: typeof ApiPublicDiagRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/_diag': {
+      id: '/api/public/_diag'
+      path: '/api/public'
+      fullPath: '/api/public'
+      preLoaderRoute: typeof ApiPublicDiagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeadershipUpdateRoute: LeadershipUpdateRoute,
   PipelineRoute: PipelineRoute,
   WorkOrdersRoute: WorkOrdersRoute,
+  ApiPublicDiagRoute: ApiPublicDiagRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
