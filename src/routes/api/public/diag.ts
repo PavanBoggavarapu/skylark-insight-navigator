@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /** Temporary read-only diagnostics: board schema + raw value samples. No secrets returned. */
-export const Route = createFileRoute("/api/public/_diag")({
+export const Route = createFileRoute("/api/public/diag")({
   server: {
     handlers: {
       GET: async ({ request }) => {
