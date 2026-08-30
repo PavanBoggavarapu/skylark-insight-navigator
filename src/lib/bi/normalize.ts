@@ -383,8 +383,9 @@ export function classifyWorkOrderStatus(status: string | null): WorkOrderStatusB
   // Order matters: "Partial Completed" and "Not Started" must not fall into
   // the generic "complete"/"started" branches.
   if (/(delay|overdue|behind|slipped|at risk)/.test(k)) return "delayed";
-  if (/(struck|stuck|cancel|abandon|terminated|dropped|dead)/.test(k)) return "cancelled";
-  if (/(pause|hold|blocked|waiting|stalled|pending|details pending)/.test(k)) return "on_hold";
+  // "Pause / struck" is a hold, not a cancellation — check holds first.
+  if (/(pause|hold|blocked|waiting|stalled|pending|struck|stuck)/.test(k)) return "on_hold";
+  if (/(cancel|abandon|terminated|dropped|dead)/.test(k)) return "cancelled";
   if (/^(partial|partially)/.test(k)) return "active";
   if (/(complete|done|closed|delivered|finished)/.test(k)) return "completed";
   if (/^not started$/.test(k) || /(yet to start|not yet started)/.test(k)) return "not_started";

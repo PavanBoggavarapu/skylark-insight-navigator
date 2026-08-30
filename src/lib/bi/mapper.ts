@@ -361,6 +361,7 @@ export function mapWorkOrdersBoard(
 ): { workOrders: WorkOrder[]; meta: BoardMeta } {
   const mapping = buildFieldMapping(board.columns, WORK_ORDER_FIELDS);
   const { items, skipped } = dropHeaderRows(board);
+  const rawPresence: { value: boolean; start: boolean; end: boolean }[] = [];
   const todayIso = today.toISOString().slice(0, 10);
   const seen = new Map<string, number>();
 
@@ -406,6 +407,8 @@ export function mapWorkOrdersBoard(
     seen.set(key, (seen.get(key) ?? 0) + 1);
     if ((seen.get(key) ?? 0) > 1) flags.push("duplicate_record");
 
+    rawPresence.push({ value: valueRaw !== null, start: startRaw !== null, end: endRaw !== null });
+
     const client = normalizeText(clientRaw);
     const wo: WorkOrder = {
       id: item.id,
@@ -449,15 +452,15 @@ export function mapWorkOrdersBoard(
     validity: [
       validity(
         "order value",
-        workOrders.map((w) => ({ raw: !w.dataQualityFlags.includes("missing_value"), ok: w.value !== null })),
+        workOrders.map((w, i) => ({ raw: rawPresence[i]?.value ?? false, ok: w.value !== null })),
       ),
       validity(
         "start date",
-        workOrders.map((w) => ({ raw: w.startDate !== null || !w.dataQualityFlags.includes("invalid_date"), ok: w.startDate !== null })),
+        workOrders.map((w, i) => ({ raw: rawPresence[i]?.start ?? false, ok: w.startDate !== null })),
       ),
       validity(
         "end date",
-        workOrders.map((w) => ({ raw: w.endDate !== null || !w.dataQualityFlags.includes("invalid_date"), ok: w.endDate !== null })),
+        workOrders.map((w, i) => ({ raw: rawPresence[i]?.end ?? false, ok: w.endDate !== null })),
       ),
     ],
   };
