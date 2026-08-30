@@ -22,6 +22,7 @@ import type {
   Deal,
   RawValueTally,
   WorkOrder,
+  WorkOrderStatusSemanticRow,
 } from "./types";
 import {
   classifyDealStatus,
