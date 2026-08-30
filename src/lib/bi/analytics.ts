@@ -54,6 +54,7 @@ export interface OperationsMetrics {
   active: number;
   completed: number;
   delayed: number;
+  notStarted: number;
   onHold: number;
   cancelled: number;
   unknownStatus: number;
@@ -280,19 +281,11 @@ export function computeOperationsMetrics(workOrders: WorkOrder[], today = new Da
   const todayIso = today.toISOString().slice(0, 10);
   const count = (b: WorkOrder["statusBucket"]) => workOrders.filter((w) => w.statusBucket === b).length;
 
-  // Overdue = past end date and not completed/cancelled, even if the board
-  // status does not say "delayed".
-  const overdue = workOrders.filter(
-    (w) =>
-      w.endDate !== null &&
-      w.endDate < todayIso &&
-      w.statusBucket !== "completed" &&
-      w.statusBucket !== "cancelled",
-  );
-  const delayedSet = new Set([
-    ...workOrders.filter((w) => w.statusBucket === "delayed").map((w) => w.id),
-    ...overdue.map((w) => w.id),
-  ]);
+  // Delay verdict is computed once, in the mapper, from the documented rule
+  // (business status says delayed OR end date passed while not completed /
+  // cancelled). Analytics only aggregates it.
+  void todayIso;
+  const delayedSet = new Set(workOrders.filter((w) => w.delayed).map((w) => w.id));
 
   const withCompletion = workOrders.filter((w) => w.completionPercentage !== null);
   const totalValue = round2(sum(workOrders.map((w) => w.value)));
@@ -320,6 +313,7 @@ export function computeOperationsMetrics(workOrders: WorkOrder[], today = new Da
     active: count("active"),
     completed: count("completed"),
     delayed: delayedSet.size,
+    notStarted: count("not_started"),
     onHold: count("on_hold"),
     cancelled: count("cancelled"),
     unknownStatus: count("unknown"),

@@ -130,6 +130,40 @@ export function parseProbability(input: unknown): number | null {
   return p;
 }
 
+/**
+ * Documented qualitative probability ladder. Some Monday boards store
+ * closure probability as a word rather than a number; these are the only
+ * accepted words and the mapping is fixed and auditable.
+ */
+export const QUALITATIVE_PROBABILITY: Record<string, number> = {
+  "very high": 0.9,
+  high: 0.75,
+  medium: 0.5,
+  moderate: 0.5,
+  mid: 0.5,
+  low: 0.25,
+  "very low": 0.1,
+};
+
+export type ProbabilityBasis = "numeric" | "qualitative" | "unreadable" | "missing";
+
+/**
+ * Returns the probability (0..1) plus how it was derived, so the UI can
+ * disclose that a weighted figure rests on a qualitative ladder.
+ */
+export function parseProbabilityDetailed(input: unknown): {
+  value: number | null;
+  basis: ProbabilityBasis;
+} {
+  if (isBlank(input)) return { value: null, basis: "missing" };
+  const raw = String(input).trim().toLowerCase();
+  const qualitative = QUALITATIVE_PROBABILITY[raw];
+  if (qualitative !== undefined) return { value: qualitative, basis: "qualitative" };
+  const numeric = parseProbability(raw);
+  if (numeric !== null) return { value: numeric, basis: "numeric" };
+  return { value: null, basis: "unreadable" };
+}
+
 /** Completion percentage normalized to 0..100. */
 export function parseCompletion(input: unknown): number | null {
   const p = parseProbability(input);
@@ -212,6 +246,16 @@ export function parseDate(input: unknown): string | null {
     return iso(expandYear(c), b, a);
   }
 
+  // JS Date#toString() form, as exported by spreadsheets into Monday text
+  // columns: "Thu Jul 31 2025 00:00:00 GMT+0000 (Coordinated Universal Time)".
+  if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(s)) {
+    const t = Date.parse(s);
+    if (Number.isFinite(t)) {
+      const dt = new Date(t);
+      return iso(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+    }
+  }
+
   return null;
 }
 
@@ -290,14 +334,43 @@ export function classifyDealStage(stage: string | null): "won" | "lost" | "open"
   return "unknown";
 }
 
+/**
+ * Normalizes a stage / status label: trims whitespace, collapses inner
+ * spaces, strips ordering prefixes such as "A. " or "3) " used to force
+ * sort order on Monday boards, and only re-cases labels that are entirely
+ * upper- or lower-case (so "Sales Qualified Leads" survives untouched).
+ * A valid label is NEVER replaced by "Unspecified".
+ */
 export function normalizeStage(input: unknown): string | null {
   const t = normalizeText(input);
-  return t === null ? null : titleCase(t);
+  if (t === null) return null;
+  const stripped = t.replace(/^[A-Za-z0-9]{1,2}\s*[.)-]\s+/, "").trim();
+  const label = stripped.length > 0 ? stripped : t;
+  const isUniformCase = label === label.toUpperCase() || label === label.toLowerCase();
+  return isUniformCase ? titleCase(label) : label;
+}
+
+export type DealStatusBucket = "open" | "won" | "lost" | "on_hold" | "unknown";
+
+/**
+ * Buckets an explicit *deal status* label (a dedicated business field,
+ * distinct from the pipeline stage). Mapping discovered from live data:
+ * Open -> open, Won -> won, Dead -> lost, On Hold -> on_hold.
+ */
+export function classifyDealStatus(status: string | null): DealStatusBucket {
+  if (!status) return "unknown";
+  const k = status.toLowerCase().trim();
+  if (/(won|closed won|signed|awarded|converted|order received)/.test(k)) return "won";
+  if (/(dead|lost|dropped|cancel|rejected|no bid|churn|not relevant)/.test(k)) return "lost";
+  if (/(hold|paused|parked|stalled|freeze|frozen)/.test(k)) return "on_hold";
+  if (/(open|active|live|in progress|ongoing|new|pipeline|working)/.test(k)) return "open";
+  return "unknown";
 }
 
 export type WorkOrderStatusBucket =
   | "active"
   | "completed"
+  | "not_started"
   | "delayed"
   | "on_hold"
   | "cancelled"
@@ -307,11 +380,20 @@ export type WorkOrderStatusBucket =
 export function classifyWorkOrderStatus(status: string | null): WorkOrderStatusBucket {
   if (!status) return "unknown";
   const k = status.toLowerCase().trim();
+  // Order matters: "Partial Completed" and "Not Started" must not fall into
+  // the generic "complete"/"started" branches.
   if (/(delay|overdue|behind|slipped|at risk)/.test(k)) return "delayed";
+  // "Pause / struck" is a hold, not a cancellation — check holds first.
+  if (/(pause|hold|blocked|waiting|stalled|pending|struck|stuck)/.test(k)) return "on_hold";
+  if (/(cancel|abandon|terminated|dropped|dead)/.test(k)) return "cancelled";
+  if (/^(partial|partially)/.test(k)) return "active";
   if (/(complete|done|closed|delivered|finished)/.test(k)) return "completed";
-  if (/(hold|paused|blocked|waiting|stalled)/.test(k)) return "on_hold";
-  if (/(cancel|abandon|terminated)/.test(k)) return "cancelled";
-  if (/(active|in progress|ongoing|working|executing|started|survey|processing|planned|scheduled|new)/.test(k)) {
+  if (/^not started$/.test(k) || /(yet to start|not yet started)/.test(k)) return "not_started";
+  if (
+    /(active|in progress|ongoing|executed|execution|working|executing|started|survey|processing|planned|scheduled|new|open)/.test(
+      k,
+    )
+  ) {
     return "active";
   }
   return "unknown";

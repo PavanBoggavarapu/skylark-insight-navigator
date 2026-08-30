@@ -20,7 +20,18 @@ export interface DataQualityReport {
   /** Human-readable caveats to attach to any number shown to a founder. */
   caveats: string[];
   score: number; // 0..100, share of records with no flags
+  /** Human-readable description of exactly how `score` was produced. */
+  methodology: string;
+  scoreInputs: { totalRecords: number; cleanRecords: number };
 }
+
+/**
+ * THE data-quality score. Every surface (Overview, AI Analyst, Data Sources,
+ * Leadership Update) reads this one function's output via the shared
+ * snapshot, so the score can never differ between pages.
+ */
+export const QUALITY_METHODOLOGY =
+  "Score = clean records / total records x 100, where a record is clean when the mapper raised no data-quality flag against it (missing or unreadable value, probability, date, sector, status, stage, owner/client, or a suspected duplicate). Deals and work orders are pooled and weighted equally, one record one vote. Nothing is estimated or imputed.";
 
 const DEAL_MESSAGES: Partial<Record<DataQualityFlag, (n: number) => string>> = {
   missing_probability: (n) => `${n} deal${n === 1 ? " is" : "s are"} missing probability values.`,
@@ -116,5 +127,7 @@ export function analyzeDataQuality(deals: Deal[], workOrders: WorkOrder[]): Data
     issues,
     caveats,
     score: total === 0 ? 100 : Math.round((clean / total) * 100),
+    methodology: QUALITY_METHODOLOGY,
+    scoreInputs: { totalRecords: total, cleanRecords: clean },
   };
 }

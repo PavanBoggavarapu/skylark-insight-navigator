@@ -36,11 +36,17 @@ export interface Deal {
   sectorRaw: string | null;
   stage: string | null;
   stageRaw: string | null;
+  /** Explicit business deal-status field, distinct from the pipeline stage. */
+  status: string | null;
+  statusRaw: string | null;
+  statusBucket: "open" | "won" | "lost" | "on_hold" | "unknown";
   /** Stage bucket derived deterministically from the stage label. */
   outcome: "won" | "lost" | "open" | "unknown";
   value: number | null;
   /** Normalized 0..1 */
   probability: number | null;
+  /** How the probability was derived: numeric, qualitative ladder, etc. */
+  probabilityBasis: "numeric" | "qualitative" | "unreadable" | "missing";
   expectedCloseDate: string | null; // ISO yyyy-mm-dd
   owner: string | null;
   createdDate: string | null; // ISO yyyy-mm-dd
@@ -57,7 +63,10 @@ export interface WorkOrder {
   status: string | null;
   statusRaw: string | null;
   /** Status bucket derived deterministically from the status label. */
-  statusBucket: "active" | "completed" | "delayed" | "on_hold" | "cancelled" | "unknown";
+  statusBucket: "active" | "completed" | "not_started" | "delayed" | "on_hold" | "cancelled" | "unknown";
+  /** Deterministic delay verdict, see `isWorkOrderDelayed`. */
+  delayed: boolean;
+  delayReason: "status" | "overdue" | null;
   value: number | null;
   startDate: string | null;
   endDate: string | null;
@@ -77,6 +86,39 @@ export interface BoardMeta {
   fieldMapping: Record<string, string>;
   unmappedColumns: string[];
   retrievedAt: string; // ISO timestamp
+  /** Diagnostics: how the board was actually read and what it contained. */
+  diagnostics: BoardDiagnostics;
+}
+
+export interface ColumnMappingRow {
+  field: string;
+  columnId: string;
+  columnTitle: string;
+  columnType: string;
+  filled: number;
+}
+
+export interface RawValueTally {
+  raw: string;
+  normalized: string | null;
+  bucket: string;
+  count: number;
+}
+
+export interface BoardDiagnostics {
+  role: "deals" | "work_orders";
+  boardId: string;
+  boardName: string;
+  itemsRetrieved: number;
+  pagesRetrieved: number;
+  rowsSkipped: number;
+  retrievedAt: string;
+  mappings: ColumnMappingRow[];
+  /** Raw status label distribution with the bucket each label resolved to. */
+  statusValues: RawValueTally[];
+  /** Raw stage label distribution (deals boards only). */
+  stageValues: RawValueTally[];
+  validity: { field: string; present: number; valid: number; invalid: number; missing: number }[];
 }
 
 export interface DataSet {
