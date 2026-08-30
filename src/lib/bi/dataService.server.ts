@@ -7,7 +7,7 @@
  */
 
 import { getBoardItems, readMondayConfig, MondayError } from "../monday.server";
-import { detectBoardRole, mapDealsBoard, mapWorkOrdersBoard } from "./mapper";
+import { mapDealsBoard, mapWorkOrdersBoard } from "./mapper";
 import type { DataSet } from "./types";
 
 const CACHE_TTL_MS = 60_000;
