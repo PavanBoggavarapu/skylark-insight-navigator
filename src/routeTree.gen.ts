@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiAnalystRouteImport } from './routes/ai-analyst'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiAnalystRoute = AiAnalystRouteImport.update({
+  id: '/ai-analyst',
+  path: '/ai-analyst',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-analyst': typeof AiAnalystRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-analyst': typeof AiAnalystRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-analyst': typeof AiAnalystRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/ai-analyst'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/ai-analyst'
+  id: '__root__' | '/' | '/ai-analyst'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiAnalystRoute: typeof AiAnalystRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-analyst': {
+      id: '/ai-analyst'
+      path: '/ai-analyst'
+      fullPath: '/ai-analyst'
+      preLoaderRoute: typeof AiAnalystRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiAnalystRoute: AiAnalystRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
