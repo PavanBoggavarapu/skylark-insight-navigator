@@ -272,7 +272,6 @@ const SECTOR_SYNONYMS: Record<string, string> = {
   // Skylark business grouping: Powerline and Renewables roll up into Energy.
   powerline: "Energy",
   powerlines: "Energy",
-  powerline: "Energy",
   transmission: "Energy",
   transmissionline: "Energy",
   renewable: "Energy",
