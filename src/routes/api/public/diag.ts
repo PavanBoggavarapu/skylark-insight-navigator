@@ -20,6 +20,17 @@ export const Route = createFileRoute("/api/public/diag")({
             deals: { id: rawDeals.id, name: rawDeals.name, items: rawDeals.items.length, pages: rawDeals.pagesRetrieved },
             workOrders: { id: rawWo.id, name: rawWo.name, items: rawWo.items.length, pages: rawWo.pagesRetrieved },
           },
+          droppedSamples: (() => {
+            const titleById = new Map(rawWo.columns.map((c) => [c.id, c.title.trim().toLowerCase()]));
+            return rawWo.items.filter((item) => {
+              let e = 0;
+              for (const [cid, v] of Object.entries(item.values)) {
+                if (!v || String(v).trim() === "") continue;
+                if (titleById.get(cid) === String(v).trim().toLowerCase()) e += 1;
+              }
+              return e >= 2;
+            }).map((i) => ({ id: i.id, name: i.name, values: i.values }));
+          })(),
           mapped: {
             deals: d.deals.length,
             workOrders: d.workOrders.length,
