@@ -25,7 +25,7 @@ import type {
 } from "./types";
 import {
   classifyDealStatus,
-  classifyWorkOrderStatus,
+  classifyWorkOrderStatusSemantics,
   isBlank,
   normalizeSector,
   normalizeStage,
@@ -431,8 +431,13 @@ export function mapWorkOrdersBoard(
       status,
       statusRaw,
       statusBucket,
+      commercialStatus: semantics.commercial,
+      statusKind: semantics.kind,
+      statusConfidence: semantics.confidence,
+      statusInterpretation: semantics.interpretation,
       delayed,
       delayReason,
+      delayDeterminable,
       value,
       startDate,
       endDate,
