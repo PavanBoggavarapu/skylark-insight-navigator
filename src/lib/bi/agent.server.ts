@@ -144,7 +144,12 @@ export function computeForIntent(intent: BiIntent, data: DataSet): AnalyticsPayl
     if ((!need.deals || dealDateCoverage) && (!need.workOrders || woDateCoverage))
       filters.push(`Period: ${requestedRange.label}`);
   }
-  const range = requestedRange;
+  const rangeApplied =
+    !rangeRequested || (need.deals ? dealDateCoverage : true) || (need.workOrders ? woDateCoverage : true);
+  const range = {
+    ...requestedRange,
+    label: rangeApplied ? requestedRange.label : `All time (no dates recorded for ${requestedRange.label})`,
+  };
 
   return {
     pipeline: need.deals ? computePipelineMetrics(filteredDeals) : null,
