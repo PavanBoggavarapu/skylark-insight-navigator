@@ -39,6 +39,8 @@ Rules:
 - Only use intent "clarification_needed" when the question is genuinely ambiguous AND no reasonable default exists (e.g. "how are we doing?"). If a sensible default exists, use it and record it in "assumptions" instead of asking.
 - Time range: name the period only. Never compute dates. Use "all_time" when no period is mentioned.
 - Sector/stage/owner filters must be copied from the user's words, not invented.
+- Set "outcome" only when the user explicitly says won, lost, or open/active. A plain count question ("how many deals are on the board") has outcome "any".
+- Treat "Energy" as a business grouping that already includes Powerline and Renewables; pass the sector through as written and never split it.
 - Use "unsupported" only for questions that have nothing to do with this sales/operations data.`;
 
 const NARRATIVE_SYSTEM = `You are the executive analyst of "Skylark BI Agent", writing for the founder of Skylark Drones.
