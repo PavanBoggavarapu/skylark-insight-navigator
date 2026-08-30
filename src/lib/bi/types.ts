@@ -118,6 +118,10 @@ export interface BoardDiagnostics {
   statusValues: RawValueTally[];
   /** Raw stage label distribution (deals boards only). */
   stageValues: RawValueTally[];
+  /** Raw sector label distribution with the normalized business grouping. */
+  sectorValues: RawValueTally[];
+  /** Records whose normalized sector is Energy (Powerline + Renewables + Energy). */
+  energyMatches: number;
   validity: { field: string; present: number; valid: number; invalid: number; missing: number }[];
 }
 

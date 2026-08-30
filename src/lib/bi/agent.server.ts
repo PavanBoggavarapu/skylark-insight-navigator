@@ -39,6 +39,8 @@ Rules:
 - Only use intent "clarification_needed" when the question is genuinely ambiguous AND no reasonable default exists (e.g. "how are we doing?"). If a sensible default exists, use it and record it in "assumptions" instead of asking.
 - Time range: name the period only. Never compute dates. Use "all_time" when no period is mentioned.
 - Sector/stage/owner filters must be copied from the user's words, not invented.
+- Set "outcome" only when the user explicitly says won, lost, or open/active. A plain count question ("how many deals are on the board") has outcome "any".
+- Treat "Energy" as a business grouping that already includes Powerline and Renewables; pass the sector through as written and never split it.
 - Use "unsupported" only for questions that have nothing to do with this sales/operations data.`;
 
 const NARRATIVE_SYSTEM = `You are the executive analyst of "Skylark BI Agent", writing for the founder of Skylark Drones.
@@ -97,8 +99,17 @@ function sourceMeta(data: DataSet): SourceMetadata {
 
 /** Runs the deterministic analytics an intent requires. No model involvement. */
 export function computeForIntent(intent: BiIntent, data: DataSet): AnalyticsPayload {
-  const range = resolveTimeRange(intent.timeRange);
+  const requestedRange = resolveTimeRange(intent.timeRange);
   const need = requiredDatasets(intent);
+
+  // A time filter can only be applied where the boards actually carry dates.
+  // Applying it to a board with no date coverage would report a false zero,
+  // so it is dropped for that board and disclosed as a caveat instead.
+  const dealDateCoverage = data.deals.some((d) => d.expectedCloseDate !== null);
+  const woDateCoverage = data.workOrders.some((w) => w.startDate !== null || w.endDate !== null);
+  const rangeRequested = Boolean(requestedRange.from || requestedRange.to);
+  const dealRange = !rangeRequested || dealDateCoverage ? requestedRange : null;
+  const woRange = !rangeRequested || woDateCoverage ? requestedRange : null;
 
   const filteredDeals = need.deals
     ? filterDeals(data.deals, {
@@ -106,7 +117,7 @@ export function computeForIntent(intent: BiIntent, data: DataSet): AnalyticsPayl
         stages: intent.stages.length ? intent.stages : null,
         owners: intent.owners.length ? intent.owners : null,
         outcome: intent.outcome,
-        range,
+        range: dealRange,
       })
     : [];
 
@@ -114,7 +125,7 @@ export function computeForIntent(intent: BiIntent, data: DataSet): AnalyticsPayl
     ? filterWorkOrders(data.workOrders, {
         sectors: intent.sectors.length ? intent.sectors.map(canonical) : null,
         owners: intent.owners.length ? intent.owners : null,
-        range,
+        range: woRange,
       })
     : [];
 
@@ -123,7 +134,24 @@ export function computeForIntent(intent: BiIntent, data: DataSet): AnalyticsPayl
   if (intent.stages.length) filters.push(`Stage: ${intent.stages.join(", ")}`);
   if (intent.owners.length) filters.push(`Owner: ${intent.owners.join(", ")}`);
   if (intent.outcome) filters.push(`Outcome: ${intent.outcome}`);
-  if (range.from || range.to) filters.push(`Period: ${range.label}`);
+  if (rangeRequested) {
+    if (need.deals && !dealDateCoverage)
+      filters.push(
+        `Period ${requestedRange.label} could not be applied to deals: the Deals board carries no readable close dates, so all deals are included.`,
+      );
+    if (need.workOrders && !woDateCoverage)
+      filters.push(
+        `Period ${requestedRange.label} could not be applied to work orders: the Work Orders board carries no readable start/end dates, so all work orders are included.`,
+      );
+    if ((!need.deals || dealDateCoverage) && (!need.workOrders || woDateCoverage))
+      filters.push(`Period: ${requestedRange.label}`);
+  }
+  const rangeApplied =
+    !rangeRequested || (need.deals ? dealDateCoverage : true) || (need.workOrders ? woDateCoverage : true);
+  const range = {
+    ...requestedRange,
+    label: rangeApplied ? requestedRange.label : `All time (no dates recorded for ${requestedRange.label})`,
+  };
 
   return {
     pipeline: need.deals ? computePipelineMetrics(filteredDeals) : null,

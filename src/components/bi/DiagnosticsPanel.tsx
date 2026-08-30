@@ -77,6 +77,10 @@ export function DiagnosticsPanel({ diagnostics }: { diagnostics: BoardDiagnostic
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <ValueList title="Status values (raw → bucket)" rows={d.statusValues} />
         {d.stageValues.length > 0 ? <ValueList title="Stage values (raw → outcome)" rows={d.stageValues} /> : null}
+        <ValueList
+          title={`Sector values (raw → normalized) · Energy matches: ${formatCount(d.energyMatches)}`}
+          rows={d.sectorValues}
+        />
       </div>
 
       <div className="mt-4">
@@ -107,6 +111,9 @@ export function DiagnosticsPanel({ diagnostics }: { diagnostics: BoardDiagnostic
     stageBuckets: bucketTotals(d.stageValues),
     rawStatus: d.statusValues,
     rawStage: d.stageValues,
+    rawSectors: d.sectorValues.map((s) => ({ raw: s.raw, count: s.count })),
+    normalizedSectors: bucketTotals(d.sectorValues),
+    energyMatches: d.energyMatches,
   },
   null,
   2,
