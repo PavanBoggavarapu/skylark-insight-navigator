@@ -385,22 +385,26 @@ export function mapWorkOrdersBoard(
     const endDate = parseDate(endRaw);
     const completionPercentage = parseCompletion(completionRaw);
     const status = normalizeStage(statusRaw);
-    const statusBucket = classifyWorkOrderStatus(status);
+    const semantics = classifyWorkOrderStatusSemantics(status);
+    const statusBucket = semantics.operational;
 
-    // Delay rule: the business status says delayed, OR the expected end date
-    // has passed while the work order is neither completed nor cancelled.
-    // Missing end dates never produce a delay verdict.
+    // Delay rule: the execution status says delayed, OR the expected end date
+    // has passed while execution is known to be neither completed nor
+    // cancelled. A missing end date, or a status with no execution meaning,
+    // never produces a delay verdict — it makes delay undeterminable.
     const overdue =
       endDate !== null &&
       endDate < todayIso &&
       statusBucket !== "completed" &&
-      statusBucket !== "cancelled";
+      statusBucket !== "cancelled" &&
+      statusBucket !== "unknown_unmapped";
     const delayed = statusBucket === "delayed" || overdue;
+    const delayDeterminable = statusBucket === "delayed" || statusBucket !== "unknown_unmapped" || endDate !== null;
     const delayReason: WorkOrder["delayReason"] = statusBucket === "delayed" ? "status" : overdue ? "overdue" : null;
 
     pushIf(flags, sectorRaw === null, "missing_sector");
     pushIf(flags, statusRaw === null, "missing_status");
-    pushIf(flags, statusRaw !== null && statusBucket === "unknown", "unknown_status");
+    pushIf(flags, statusRaw !== null && statusBucket === "unknown_unmapped", "unknown_status");
     pushIf(flags, valueRaw === null, "missing_value");
     pushIf(flags, valueRaw !== null && value === null, "invalid_value");
     pushIf(flags, (startRaw !== null && startDate === null) || (endRaw !== null && endDate === null), "invalid_date");
