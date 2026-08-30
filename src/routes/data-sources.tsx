@@ -4,6 +4,7 @@ import { Database, RefreshCw, ShieldCheck } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/bi/AppShell";
 import { DataQualityPanel } from "@/components/bi/DataQualityPanel";
+import { DiagnosticsPanel } from "@/components/bi/DiagnosticsPanel";
 import { ErrorState, PanelSkeleton, SectionCard, SetupRequired } from "@/components/bi/StateBlocks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,6 +150,11 @@ function DataSourcesPage() {
 
           <BoardCard label="Deals board" board={data?.boards.deals ?? null} />
           <BoardCard label="Work Orders board" board={data?.boards.workOrders ?? null} />
+
+          {data?.boards.deals ? <DiagnosticsPanel diagnostics={data.boards.deals.diagnostics} /> : null}
+          {data?.boards.workOrders ? (
+            <DiagnosticsPanel diagnostics={data.boards.workOrders.diagnostics} />
+          ) : null}
 
           {data?.quality ? <DataQualityPanel report={data.quality} /> : null}
 
