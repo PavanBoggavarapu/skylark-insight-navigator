@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiAnalystRouteImport } from './routes/ai-analyst'
 import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as WorkOrdersRouteImport } from './routes/work-orders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const PipelineRoute = PipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkOrdersRoute = WorkOrdersRouteImport.update({
+  id: '/work-orders',
+  path: '/work-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-analyst': typeof AiAnalystRoute
   '/pipeline': typeof PipelineRoute
+  '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-analyst': typeof AiAnalystRoute
   '/pipeline': typeof PipelineRoute
+  '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ai-analyst': typeof AiAnalystRoute
   '/pipeline': typeof PipelineRoute
+  '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ai-analyst' | '/pipeline'
+  fullPaths: '/' | '/ai-analyst' | '/pipeline' | '/work-orders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ai-analyst' | '/pipeline'
-  id: '__root__' | '/' | '/ai-analyst' | '/pipeline'
+  to: '/' | '/ai-analyst' | '/pipeline' | '/work-orders'
+  id: '__root__' | '/' | '/ai-analyst' | '/pipeline' | '/work-orders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiAnalystRoute: typeof AiAnalystRoute
   PipelineRoute: typeof PipelineRoute
+  WorkOrdersRoute: typeof WorkOrdersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/work-orders': {
+      id: '/work-orders'
+      path: '/work-orders'
+      fullPath: '/work-orders'
+      preLoaderRoute: typeof WorkOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiAnalystRoute: AiAnalystRoute,
   PipelineRoute: PipelineRoute,
+  WorkOrdersRoute: WorkOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
