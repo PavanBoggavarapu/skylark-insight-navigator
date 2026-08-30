@@ -10,6 +10,8 @@ export const Route = createFileRoute("/api/public/diag")({
       woEndYears: yrs(d.workOrders.map((x) => x.endDate)),
       energyDeals: d.deals.filter((x) => x.sector === "Energy").length,
       energyWO: d.workOrders.filter((x) => x.sector === "Energy").length,
+      dealCols: d.dealsBoard?.columnsSeen.map((c)=>c.title+':'+c.type),
+      woCols: d.workOrdersBoard?.columnsSeen.map((c)=>c.title+':'+c.type),
       energyPipeline: d.deals.filter((x) => x.sector === "Energy").reduce((a, x) => a + (x.value ?? 0), 0),
     });
   } } },
