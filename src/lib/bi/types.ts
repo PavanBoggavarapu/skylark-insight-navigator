@@ -62,11 +62,25 @@ export interface WorkOrder {
   sectorRaw: string | null;
   status: string | null;
   statusRaw: string | null;
-  /** Status bucket derived deterministically from the status label. */
-  statusBucket: "active" | "completed" | "not_started" | "delayed" | "on_hold" | "cancelled" | "unknown";
-  /** Deterministic delay verdict, see `isWorkOrderDelayed`. */
+  /**
+   * Operational (execution) bucket. "unknown_unmapped" is used whenever the
+   * raw label carries no defensible execution meaning — including commercial
+   * labels such as Won/Dead/Open.
+   */
+  statusBucket: "active" | "completed" | "not_started" | "delayed" | "on_hold" | "cancelled" | "unknown_unmapped";
+  /** Commercial (deal-lifecycle) meaning of the same label, kept separate. */
+  commercialStatus: "won" | "lost" | "open" | "on_hold" | null;
+  /** Which kind of label the source carried. */
+  statusKind: "execution" | "commercial" | "blank" | "unrecognised";
+  /** Confidence in the operational mapping. */
+  statusConfidence: "high" | "medium" | "none";
+  /** Plain-language note on what the label proves and what it does not. */
+  statusInterpretation: string;
+  /** Deterministic delay verdict; false whenever delay cannot be evidenced. */
   delayed: boolean;
   delayReason: "status" | "overdue" | null;
+  /** False when neither status nor dates can decide whether the order is late. */
+  delayDeterminable: boolean;
   value: number | null;
   startDate: string | null;
   endDate: string | null;
