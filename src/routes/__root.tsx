@@ -83,6 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "AI-powered business intelligence for founders and executives, reading live sales and delivery data from Monday.com.",
       },
       { name: "author", content: "Skylark Drones" },
+      {
+        name: "google-site-verification",
+        content: "7InGYCSwVikrTzIBtzPVTJ7EKvrFSgDC9Ui9BR1QIwI",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
