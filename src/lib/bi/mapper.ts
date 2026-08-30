@@ -318,6 +318,7 @@ export function mapDealsBoard(
       deals.map((d) => ({ raw: d.sectorRaw, normalized: d.sector, bucket: d.sector ?? "unspecified" })),
     ),
     energyMatches: deals.filter((d) => d.sector === "Energy").length,
+    statusSemantics: [],
     validity: [
       validity(
         "deal value",
@@ -466,6 +467,7 @@ export function mapWorkOrdersBoard(
       workOrders.map((w) => ({ raw: w.sectorRaw, normalized: w.sector, bucket: w.sector ?? "unspecified" })),
     ),
     energyMatches: workOrders.filter((w) => w.sector === "Energy").length,
+    statusSemantics: statusSemanticRows(workOrders),
     validity: [
       validity(
         "order value",
@@ -509,4 +511,31 @@ export function detectBoardRole(board: RawBoard): "deals" | "work_orders" {
   if (has("nature of work")) woScore += 1;
   if (has("work order")) woScore += 1;
   return woScore > dealScore ? "work_orders" : "deals";
+}
+
+/**
+ * Raw work-order status label -> operational mapping -> interpretation.
+ * Kept separate from the raw distribution so an ambiguous mapping is visible
+ * rather than hidden behind a bucket name.
+ */
+function statusSemanticRows(workOrders: WorkOrder[]): WorkOrderStatusSemanticRow[] {
+  const map = new Map<string, WorkOrderStatusSemanticRow>();
+  for (const w of workOrders) {
+    const raw = w.statusRaw ?? "(blank)";
+    const existing = map.get(raw);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    map.set(raw, {
+      raw,
+      count: 1,
+      kind: w.statusKind,
+      operational: w.statusBucket,
+      commercial: w.commercialStatus,
+      confidence: w.statusConfidence,
+      interpretation: w.statusInterpretation,
+    });
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count);
 }

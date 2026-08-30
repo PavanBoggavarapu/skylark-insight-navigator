@@ -119,6 +119,16 @@ export interface RawValueTally {
   count: number;
 }
 
+export interface WorkOrderStatusSemanticRow {
+  raw: string;
+  count: number;
+  kind: "execution" | "commercial" | "blank" | "unrecognised";
+  operational: string;
+  commercial: string | null;
+  confidence: "high" | "medium" | "none";
+  interpretation: string;
+}
+
 export interface BoardDiagnostics {
   role: "deals" | "work_orders";
   boardId: string;
@@ -136,6 +146,11 @@ export interface BoardDiagnostics {
   sectorValues: RawValueTally[];
   /** Records whose normalized sector is Energy (Powerline + Renewables + Energy). */
   energyMatches: number;
+  /**
+   * Work Orders only: audit trail of raw status -> operational status ->
+   * business interpretation, reported separately from the raw distribution.
+   */
+  statusSemantics: WorkOrderStatusSemanticRow[];
   validity: { field: string; present: number; valid: number; invalid: number; missing: number }[];
 }
 
