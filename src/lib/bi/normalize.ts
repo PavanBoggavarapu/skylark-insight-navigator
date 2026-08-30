@@ -93,7 +93,7 @@ export function parseNumeric(input: unknown): number | null {
   const match = s.match(/^([0-9][0-9,\s]*(?:\.[0-9]+)?)\s*([a-z]+)?$/);
   if (!match) return null;
 
-  const numericPart = match[1].replace(/[,\s]/g, "");
+  const numericPart = (match[1] ?? "").replace(/[,\s]/g, "");
   const n = Number(numericPart);
   if (!Number.isFinite(n)) return null;
 
@@ -182,29 +182,29 @@ export function parseDate(input: unknown): string | null {
 
   // ISO first (optionally with time).
   const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
-  if (isoMatch) return iso(+isoMatch[1], +isoMatch[2], +isoMatch[3]);
+  if (isoMatch) return iso(+(isoMatch[1] ?? 0), +(isoMatch[2] ?? 0), +(isoMatch[3] ?? 0));
 
   // 15-Jan-26 / 15 Jan 2026 / Jan 15, 2026 / January 15 2026
   const dMonY = s.match(/^(\d{1,2})[\s\-/.]*([A-Za-z]{3,9})[\s\-/.,]*(\d{2,4})$/);
   if (dMonY) {
-    const m = MONTHS[dMonY[2].toLowerCase()];
+    const m = MONTHS[(dMonY[2] ?? "").toLowerCase()];
     if (!m) return null;
-    return iso(expandYear(+dMonY[3]), m, +dMonY[1]);
+    return iso(expandYear(+(dMonY[3] ?? 0)), m, +(dMonY[1] ?? 0));
   }
   const monDY = s.match(/^([A-Za-z]{3,9})[\s\-/.]*(\d{1,2})(?:st|nd|rd|th)?[\s\-/.,]+(\d{2,4})$/);
   if (monDY) {
-    const m = MONTHS[monDY[1].toLowerCase()];
+    const m = MONTHS[(monDY[1] ?? "").toLowerCase()];
     if (!m) return null;
-    return iso(expandYear(+monDY[3]), m, +monDY[2]);
+    return iso(expandYear(+(monDY[3] ?? 0)), m, +(monDY[2] ?? 0));
   }
 
   // Numeric separators: dd/mm/yyyy or mm/dd/yyyy
   const numeric = s.match(/^(\d{1,4})[/\-.](\d{1,2})[/\-.](\d{1,4})$/);
   if (numeric) {
-    const a = +numeric[1];
-    const b = +numeric[2];
-    const c = +numeric[3];
-    if (numeric[1].length === 4) return iso(a, b, c); // yyyy/mm/dd
+    const a = +(numeric[1] ?? 0);
+    const b = +(numeric[2] ?? 0);
+    const c = +(numeric[3] ?? 0);
+    if ((numeric[1] ?? "").length === 4) return iso(a, b, c); // yyyy/mm/dd
     // Day-first is the assignment's documented default (15/01/2026).
     // Fall back to month-first only when day-first is impossible.
     if (a > 12 && b <= 12) return iso(expandYear(c), b, a);
@@ -259,7 +259,7 @@ function canonicalKey(s: string): string {
 function titleCase(s: string): string {
   return s
     .split(/\s+/)
-    .map((w) => (w.length <= 2 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+    .map((w) => (w.length <= 2 ? w.toUpperCase() : (w[0] ?? "").toUpperCase() + w.slice(1).toLowerCase()))
     .join(" ");
 }
 

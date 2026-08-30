@@ -142,24 +142,24 @@ function coerce(raw: unknown): unknown {
   if (typeof raw !== "object" || raw === null) return raw;
   const o = { ...(raw as Record<string, unknown>) };
 
-  if (Array.isArray(o.metrics)) {
-    o.metrics = (o.metrics as unknown[]).filter(
+  if (Array.isArray(o['metrics'])) {
+    o['metrics'] = (o['metrics'] as unknown[]).filter(
       (m): m is string => typeof m === "string" && (METRICS as readonly string[]).includes(m),
     );
   }
-  if (Array.isArray(o.datasets)) {
-    o.datasets = (o.datasets as unknown[]).filter(
+  if (Array.isArray(o['datasets'])) {
+    o['datasets'] = (o['datasets'] as unknown[]).filter(
       (d): d is string => d === "deals" || d === "work_orders",
     );
   }
-  if (o.outcome === "any" || o.outcome === "" || o.outcome === undefined) o.outcome = null;
-  if (typeof o.intent === "string" && !(INTENTS as readonly string[]).includes(o.intent)) {
-    o.intent = "unsupported";
+  if (o['outcome'] === "any" || o['outcome'] === "" || o['outcome'] === undefined) o['outcome'] = null;
+  if (typeof o['intent'] === "string" && !(INTENTS as readonly string[]).includes(o['intent'])) {
+    o['intent'] = "unsupported";
   }
-  const tr = o.timeRange as Record<string, unknown> | undefined;
+  const tr = o['timeRange'] as Record<string, unknown> | undefined;
   if (tr) {
-    if (typeof tr.type === "string" && !(TIME_RANGE_TYPES as readonly string[]).includes(tr.type)) {
-      tr.type = "all_time";
+    if (typeof tr['type'] === "string" && !(TIME_RANGE_TYPES as readonly string[]).includes(tr['type'])) {
+      tr['type'] = "all_time";
     }
     for (const k of ["quarter", "year", "from", "to"]) {
       if (tr[k] === "" || tr[k] === "null") tr[k] = null;
