@@ -1,1356 +1,342 @@
-# Skylark Insights Hub
+# Skylark Drones — Monday.com Business Intelligence Agent
 
-BUILD A PRODUCTION-QUALITY SKYLARK DRONES BUSINESS INTELLIGENCE AGENT
+A conversational Business Intelligence (BI) agent that connects **live** to two Monday.com boards (Deals and Work Orders), computes business metrics **deterministically** from the source data, and uses Google Gemini strictly for natural-language understanding and executive-level interpretation.
 
-Act as a Principal Full-Stack Engineer, AI Engineer, Data Engineer, UX Engineer, and Product Architect with 20+ years of professional experience.
+Built as a full-stack TypeScript application (TanStack Start / React 19) for the Skylark Drones Full Stack Developer technical assignment.
 
-Build a complete, polished, deployable full-stack web application for the following technical assignment:
+> **Hosted prototype:** https://skylark-insight-navigator.lovable.app
 
-Skylark Drones — Monday.com Business Intelligence Agent
+---
 
-Do not build a generic chatbot.
+## 1. Project Overview
 
-Build a realistic executive-facing Business Intelligence application that demonstrates:
+Founders and executives at Skylark Drones track their commercial pipeline and project portfolio in Monday.com. This application turns those two boards into a question-answering BI system: a founder asks a question in plain English ("How's our Energy pipeline looking?"), and the agent retrieves the live board data, normalizes it, calculates the metrics in code, and asks Gemini to write the executive narrative around those verified numbers.
 
-Full-stack engineering
+The design principle throughout: **numbers come from deterministic code, not from the language model.** Gemini never computes a metric; it only interprets metrics that have already been computed.
 
-Gemini AI
+## 2. Problem Statement
 
-Monday.com API integration
+Executive questions about pipeline, revenue, sector performance, and work orders require a human to manually inspect two Monday.com boards, reconcile inconsistent labels, and synthesize a defensible answer. Raw board data is messy — inconsistent sector names, mixed commercial/operational status labels, missing probabilities and dates — so naive aggregation produces wrong numbers, and naive LLM aggregation produces *invented* numbers.
 
-Data engineering
+## 3. Solution
 
-Business intelligence
+A three-layer architecture that separates concerns:
 
-Data resilience
+1. **Deterministic data layer** — Monday.com GraphQL retrieval, schema-discovering board mapper, normalization, and an analytics engine that computes all metrics in TypeScript.
+2. **AI layer** — Gemini (via an AI gateway) performs intent extraction (question → structured query plan) and narrative generation (metrics → executive prose). It is never asked to do arithmetic on raw data.
+3. **Presentation layer** — a React dashboard (Executive Overview, Pipeline, Work Orders, AI Analyst chat, Leadership Update, Data Sources) that renders the same deterministic metrics the agent uses.
 
-Conversational AI
+## 4. Key Features
 
-Executive reporting
+- **Conversational AI Analyst** — natural-language Q&A over live board data, with clarifying-question support when a question is ambiguous.
+- **Executive Overview dashboard** — KPI cards (pipeline value, weighted pipeline, deal counts, work-order counts), sector breakdowns, and deals/work orders needing attention.
+- **Pipeline view** — sales analytics: win rate, pipeline by sector and stage, sector performance table, at-risk deals.
+- **Work Orders view** — operational portfolio view with explicit caveats where execution status cannot be determined from source labels.
+- **Leadership Update** — one-click executive briefing synthesizing pipeline, operations, risks, opportunities, and data-quality caveats; copy-to-clipboard for distribution.
+- **Data Sources & Diagnostics** — per-board transparency: items retrieved vs. mapped, column-to-field mapping, raw label distributions, sector normalization tallies, and reconciliation of skipped rows.
+- **Data-quality reporting** — every answer carries caveats derived from actual gaps in the source data.
 
-Error handling
+## 5. Architecture
 
-Clean architecture
-
-Professional UX
-
-The final application must be suitable for demonstration to a senior engineering hiring panel.
-
-1. CORE PRODUCT
-
-Create an application named:
-
-Skylark BI Agent
-
-Tagline:
-
-AI-powered business intelligence for founders and executives.
-
-The user should be able to ask natural-language business questions about data stored in two Monday.com boards:
-
-Deals / Sales Pipeline
-
-Work Orders / Project Execution
-
-Example:
-
-How is our energy pipeline looking this quarter?
-
-The application should:
-
-Understand the question.
-
-Determine which data is required.
-
-Retrieve the required data dynamically from Monday.com.
-
-Normalize messy business data.
-
-Calculate business metrics deterministically.
-
-Identify data-quality problems.
-
-Use Gemini to explain the results.
-
-Present concise founder-level insights.
-
-2. CRITICAL REQUIREMENT — NO HARDCODED BUSINESS DATA
-
-The provided Excel/CSV files are used only to populate Monday.com.
-
-DO NOT hardcode the contents of the Excel/CSV files into the application.
-
-DO NOT create fake datasets that pretend to be Monday.com.
-
-DO NOT use static business metrics in production responses.
-
-Runtime business data must come dynamically from Monday.com.
-
-If Monday.com is not configured yet, create a clearly labeled configuration/setup state rather than pretending that the connection works.
-
-3. TECHNOLOGY
-
-Use the native Google AI Studio full-stack web architecture.
-
-Preferred stack:
-
-Frontend:
-
-React
-
-TypeScript
-
-modern CSS/Tailwind if available
-
-responsive design
-
-Backend:
-
-Node.js
-
-TypeScript
-
-server-side API routes/services
-
-AI:
-
-Gemini API
-
-structured output
-
-function/tool calling where useful
-
-Integration:
-
-Monday.com GraphQL API
-
-Do not introduce Python/FastAPI unless absolutely necessary.
-
-Keep the architecture simple enough to build, deploy, and explain within a 5–6 hour assignment.
-
-4. ARCHITECTURE
-
-Use this architecture:
-
-                    ┌─────────────────────────┐
-                    │       React UI          │
-                    │ Conversational Interface│
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │     Server API Layer     │
-                    └────────────┬────────────┘
-                                 │
-               ┌─────────────────┼─────────────────┐
-               │                 │                 │
-               ▼                 ▼                 ▼
-       ┌──────────────┐  ┌───────────────┐  ┌──────────────┐
-       │ Gemini Agent │  │ Monday Client │  │ Error Handler│
-       └──────┬───────┘  └───────┬───────┘  └──────────────┘
-              │                  │
-              │                  ▼
-              │          ┌────────────────┐
-              │          │ Data Normalizer│
-              │          └───────┬────────┘
-              │                  │
-              │                  ▼
-              │          ┌────────────────┐
-              │          │Analytics Engine│
-              │          └───────┬────────┘
-              │                  │
-              └──────────────────┤
-                                 ▼
-                         Founder Response
-
-
-Separate:
-
-UI
-
-API
-
-Monday integration
-
-normalization
-
-analytics
-
-Gemini orchestration
-
-Do not put all logic inside one component or one server file.
-
-5. GEMINI RESPONSIBILITIES
-
-Use Gemini for:
-
-Natural-language query understanding
-
-Intent extraction
-
-Identifying required datasets
-
-Extracting filters
-
-Clarification questions
-
-Business-language explanation
-
-Executive summaries
-
-Leadership updates
-
-Do NOT use Gemini as the source of truth for numerical calculations.
-
-Gemini should never independently calculate:
-
-revenue totals
-
-pipeline totals
-
-percentages
-
-weighted pipeline
-
-deal counts
-
-win rate
-
-date filtering
-
-sector aggregation
-
-Those must be calculated deterministically by application code.
-
-6. STRUCTURED QUERY UNDERSTANDING
-
-Create a structured intent model.
-
-For example:
-
-{
-  "intent": "pipeline_analysis",
-  "datasets": ["deals"],
-  "sector": "Energy",
-  "timeRange": {
-    "type": "current_quarter"
-  },
-  "metrics": [
-    "total_pipeline",
-    "weighted_pipeline",
-    "deal_count"
-  ]
-}
-
-
-Use Gemini structured output / schema validation.
-
-Never execute arbitrary code or arbitrary API instructions generated by Gemini.
-
-Gemini should produce a safe structured query.
-
-The server validates the query before executing it.
-
-7. MONDAY.COM INTEGRATION
-
-Implement a server-side Monday.com GraphQL client.
-
-Required environment/secrets:
-
-MONDAY_API_TOKEN
-MONDAY_DEALS_BOARD_ID
-MONDAY_WORK_ORDERS_BOARD_ID
-
-
-Use Google AI Studio's secure Secrets mechanism for API credentials.
-
-Never expose:
-
-MONDAY_API_TOKEN
-
-GEMINI API credentials
-
-other secrets
-
-to browser/client-side code.
-
-Monday.com access must be:
-
-READ ONLY
-
-Do not create, update, or delete Monday items.
-
-8. MONDAY DATA FLOW
-
-Implement:
-
-Monday GraphQL API
-        ↓
-Raw board response
-        ↓
-Board mapper
-        ↓
-Normalized Deal / WorkOrder objects
-        ↓
-Analytics engine
-
-
-The rest of the application should not depend directly on raw Monday GraphQL responses.
-
-This allows the source schema to change without rewriting business logic.
-
-9. MONDAY BOARD READER
-
-Implement reusable server-side functions similar to:
-
-getDeals()
-getWorkOrders()
-getBoardItems(boardId)
-
-
-Handle:
-
-pagination
-
-API failures
-
-empty boards
-
-missing columns
-
-malformed responses
-
-authentication failures
-
-rate limits where practical
-
-Never assume a board always has perfect data.
-
-10. DATA NORMALIZATION
-
-The assignment explicitly states that the business data is messy.
-
-Build a normalization layer.
-
-Handle:
-
-Null values
-
-Examples:
-
-null
-""
-"N/A"
-"NA"
-"-"
-"unknown"
-
-
-Dates
-
-Support inconsistent formats such as:
-
-2026-01-15
-15/01/2026
-Jan 15, 2026
-15-Jan-26
-
-
-Convert to a consistent internal date representation.
-
-Never invent missing dates.
-
-Numeric values
-
-Safely handle values such as:
-
-50000
-"50000"
-"50,000"
-"$50,000"
-"50K"
-"₹50,000"
-
-
-Do not make unsupported currency assumptions.
-
-Text
-
-Normalize obvious naming differences:
-
-Energy
-energy
- ENERGY
-Energy Sector
-
-
-while retaining the original raw value when useful for traceability.
-
-11. CANONICAL DATA MODELS
-
-Create normalized internal models.
-
-Deal:
-
-id
-name
-company
-sector
-stage
-value
-probability
-expectedCloseDate
-owner
-createdDate
-rawData
-dataQualityFlags
-
-
-Work Order:
-
-id
-project
-client
-sector
-status
-value
-startDate
-endDate
-owner
-completionPercentage
-rawData
-dataQualityFlags
-
-
-Adapt these models to the actual Monday.com data.
-
-IMPORTANT:
-
-First inspect the actual board schema.
-
-Do not invent columns that don't exist.
-
-12. DATA QUALITY ENGINE
-
-Create a data-quality analysis layer.
-
-Calculate:
-
-missing probability count
-
-missing close-date count
-
-missing sector count
-
-invalid dates
-
-invalid numeric values
-
-unknown statuses
-
-duplicate records where detectable
-
-Display warnings when relevant.
-
-Example:
-
-Data Quality
-
-⚠ 15 deals are missing probability values.
-
-⚠ 8 deals do not have expected close dates.
-
-⚠ 3 records contain an unknown sector.
-
-Weighted pipeline excludes deals without valid probability values.
-
-
-These values must come from actual data.
-
-Never fabricate them.
-
-13. BUSINESS ANALYTICS
-
-Create deterministic analytics functions.
-
-Pipeline:
-
-Total Pipeline
-Weighted Pipeline
-Deal Count
-Average Deal Size
-Pipeline by Sector
-Pipeline by Stage
-Pipeline by Owner
-Expected Close Value
-
-
-Sales:
-
-Won Deals
-Lost Deals
-Open Deals
-Win Rate
-Average Deal Size
-Sector Performance
-
-
-Operations:
-
-Total Work Orders
-Active Work Orders
-Completed Work Orders
-Delayed Work Orders
-Average Completion %
-Work Order Value
-Work Orders by Sector
-Work Orders by Status
-
-
-Cross-board:
-
-Sector pipeline vs work orders
-Sales concentration vs operational concentration
-High pipeline / low execution sectors
-Potential operational bottlenecks
-
-
-Only perform cross-board analysis when the available data supports it.
-
-14. WEIGHTED PIPELINE
-
-Use:
-
-Weighted Pipeline = Deal Value × Probability
-
-
-Normalize probability values such as:
-
-0.75
-75%
-"75%"
-
-
-Do not invent probability when missing.
-
-Exclude invalid/missing probability records from weighted calculations where appropriate.
-
-Clearly explain the exclusion.
-
-15. TIME PERIODS
-
-Support natural-language time filters:
-
-today
-this week
-this month
-this quarter
-last quarter
-this year
-Q1
-Q2
-Q3
-Q4
-specific date ranges
-
-
-Gemini can identify the requested period.
-
-The server must perform actual date filtering.
-
-Do not rely on Gemini for date arithmetic.
-
-16. BUSINESS QUESTIONS
-
-Support these high-value queries.
-
-Pipeline
-
-"How is our pipeline looking this quarter?"
-
-"What is our weighted pipeline?"
-
-"How many open deals do we have?"
-
-"Which sector has the strongest pipeline?"
-
-Deals
-
-"Which deals need attention?"
-
-"What are our largest opportunities?"
-
-"Which high-value deals have low probability?"
-
-Sector
-
-"How is the Energy sector performing?"
-
-"Compare Energy and Infrastructure."
-
-Operations
-
-"How many work orders are delayed?"
-
-"How are our projects performing?"
-
-"Which sector has the most active work?"
-
-Cross-board
-
-"Compare Energy sales pipeline with Energy work orders."
-
-"Which sectors have strong sales pipeline but weak execution?"
-
-Executive
-
-"Prepare a leadership update."
-
-17. CLARIFICATION
-
-When a question is genuinely ambiguous, ask a useful clarification.
-
-Example:
-
-User:
-
-How are we doing?
-
-
-Agent:
-
-I can give you an overall business view,
-sales pipeline analysis, or project-execution view.
-
-Which would you like?
-
-
-Do not ask unnecessary questions.
-
-When a reasonable default exists, use it and state the assumption.
-
-18. EXECUTIVE-LEVEL RESPONSE
-
-The agent should provide insight rather than raw data.
-
-Bad:
-
-Pipeline: ₹2.4 Cr
-Deals: 37
-
-
-Good:
-
-Executive Summary
-
-The current pipeline is ₹2.4 Cr across 37 opportunities,
-with ₹1.1 Cr in weighted pipeline.
-
-Energy is the largest contributor to the pipeline,
-which creates both a growth opportunity and concentration risk.
-
-Several opportunities are missing probability values,
-so weighted pipeline does not represent the complete
-opportunity set.
-
-Recommended Actions
-
-1. Review high-value Energy opportunities.
-2. Complete missing probability data.
-3. Review deals expected to close this quarter.
-
-
-Clearly distinguish:
-
-factual data
-
-calculated metrics
-
-insights
-
-risks
-
-recommendations
-
-assumptions
-
-data-quality caveats
-
-Never present speculation as fact.
-
-19. UI DESIGN
-
-Create a premium enterprise interface.
-
-Primary navigation:
-
-Overview
-AI Analyst
-Pipeline
-Work Orders
-Leadership Update
-Data Sources
-
-
-Main AI page:
-
-Skylark BI Agent
-
-AI-powered business intelligence for founders
-
-● Monday.com Connected
-
-Ask a business question...
-
-[ Send ]
-
-
-Suggested questions:
-
-How is our pipeline looking this quarter?
-
-Which sector has the strongest pipeline?
-
-Which deals need attention?
-
-How are our work orders performing?
-
-Compare Energy and Infrastructure.
-
-Prepare a leadership update.
-
-
-20. OVERVIEW PAGE
-
-Create executive KPI cards:
-
-Total Pipeline
-₹X
-
-Weighted Pipeline
-₹X
-
-Open Deals
-X
-
-Active Work Orders
-X
-
-Delayed Projects
-X
-
-
-Add small charts for:
-
-Pipeline by sector
-
-Pipeline by stage
-
-Work orders by status
-
-Only show charts supported by actual data.
-
-21. PIPELINE PAGE
-
-Display:
-
-total pipeline
-
-weighted pipeline
-
-deal count
-
-average deal size
-
-pipeline by sector
-
-pipeline by stage
-
-top opportunities
-
-Use clean charts and tables.
-
-Avoid visual clutter.
-
-22. WORK ORDERS PAGE
-
-Display:
-
-total work orders
-
-active work
-
-completed work
-
-delayed work
-
-average completion percentage
-
-work-order value
-
-sector breakdown
-
-Highlight projects requiring attention.
-
-23. LEADERSHIP UPDATE
-
-Create a button:
-
-Prepare Leadership Update
-
-Generate:
-
-Leadership Update
-
-Executive Summary
-
-Sales & Pipeline
-
-Operations
-
-Key Risks
-
-Data Quality
-
-Recommended Actions
-
-
-The update should be concise enough for a founder to understand in under two minutes.
-
-Interpret "leadership update" as:
-
-A concise executive summary containing current KPIs, notable trends, business risks, data-quality caveats, and recommended actions.
-
-24. SOURCE TRANSPARENCY
-
-When appropriate, show:
-
-Data Sources
-
-Deals Board
-Work Orders Board
-
-Records analyzed: X
-
-Retrieved: [timestamp]
-
-
-This makes it clear that results are based on live source data.
-
-25. ERROR HANDLING
-
-Gracefully handle:
-
-Monday API unavailable
-
-invalid Monday token
-
-board not found
-
-empty board
-
-missing board columns
-
-Gemini API failure
-
-malformed Gemini output
-
-invalid user query
-
-unsupported query
-
-invalid dates
-
-unexpected data types
-
-Never display raw stack traces to users.
-
-Example:
-
-I couldn't retrieve the latest Monday.com data right now.
-
-Please try again in a moment.
-
-
-Technical errors should be logged server-side.
-
-26. SECURITY
-
-Follow these rules strictly:
-
-secrets must remain server-side
-
-never hardcode API keys
-
-never expose Monday API token to React
-
-validate all server inputs
-
-validate Gemini structured outputs
-
-do not execute arbitrary Gemini-generated code
-
-Monday integration is read-only
-
-avoid logging secrets
-
-Use Google AI Studio's server-side Secrets functionality for credentials.
-
-27. PERFORMANCE
-
-Optimize for a small but reliable prototype.
-
-Avoid:
-
-unnecessary database
-
-vector database
-
-RAG
-
-multi-agent architecture
-
-unnecessary microservices
-
-Prefer:
-
-React
-+
-Node server
-+
-Monday API
-+
-Gemini
-+
-Deterministic analytics
-
-
-Cache Monday data briefly where appropriate if it improves performance, but do not allow stale data to be misleading.
-
-Show the retrieval timestamp.
-
-28. PROFESSIONAL UX DETAILS
-
-Include:
-
-loading indicators
-
-skeleton states
-
-empty states
-
-error states
-
-responsive layout
-
-accessible buttons
-
-keyboard-friendly chat input
-
-disabled Send button while processing
-
-retry action for failed requests
-
-clear connection status
-
-clear data-quality indicators
-
-Use subtle animations only where they improve usability.
-
-29. TESTING
-
-Create tests for critical business logic.
-
-At minimum:
-
-numeric parsing
-
-date normalization
-
-probability normalization
-
-sector normalization
-
-missing values
-
-weighted pipeline
-
-pipeline aggregation
-
-sector aggregation
-
-work-order metrics
-
-intent validation
-
-Mock Monday.com API responses in tests.
-
-Do not require a live Monday account to run unit tests.
-
-30. DOCUMENTATION
-
-Create a professional README containing:
-
-Project Overview
-
-Problem Statement
-
-Architecture
-
-Tech Stack
-
-Application Flow
-
-Monday.com Setup
-
-Board Configuration
-
-Environment Variables
-
-Gemini Integration
-
-Data Normalization
-
-Analytics Engine
-
-Data Quality
-
-Error Handling
-
-Security
-
-Supported Questions
-
-Leadership Updates
-
-Testing
-
-Deployment
-
-AI Tools Used
-
-Assumptions
-
-Trade-offs
-
-Limitations
-
-Future Improvements
-
-
-31. DECISION LOG
-
-Create:
-
-docs/decision-log.md
-
-
-Keep it within approximately two pages.
-
-Document:
-
-assumptions
-
-architecture decisions
-
-why Monday API was used
-
-why analytics are deterministic
-
-why Gemini does not calculate business metrics
-
-data normalization strategy
-
-missing-data strategy
-
-clarification strategy
-
-leadership-update interpretation
-
-trade-offs
-
-what would be improved with more time
-
-Write it as an experienced engineer's decision record.
-
-32. TIME PRIORITY
-
-This is a 5–6 hour technical assignment.
-
-Prioritize:
-
-P0 — REQUIRED
-
-Monday.com integration
-
-dynamic data
-
-normalization
-
-analytics
-
-conversational agent
-
-professional UI
-
-error handling
-
-data-quality reporting
-
-deployment
-
-README
-
-Decision Log
-
-P1 — IMPORTANT
-
-cross-board analysis
-
-clarification
-
-leadership update
-
-tests
-
-source metadata
-
-P2 — OPTIONAL
-
-advanced charts
-
-conversation memory
-
-advanced visualizations
-
-additional analytics
-
-If time is limited, finish P0 completely before P1/P2.
-
-33. DO NOT FABRICATE
-
-Never fabricate:
-
-Monday board data
-
-API responses
-
-credentials
-
-business metrics
-
-board IDs
-
-test results
-
-connection status
-
-If the Monday API is not configured, clearly show:
-
-Monday.com connection required
-
-
-rather than showing fake "connected" data.
-
-If a feature cannot be completed, leave a clean documented implementation boundary rather than creating fake functionality.
-
-34. IMPORTANT DEVELOPMENT STRATEGY
-
-Do not generate a giant application blindly.
-
-Build incrementally.
-
-PHASE 1:
-
-Inspect the available datasets and understand their actual schema.
-
-PHASE 2:
-
-Create the application architecture and UI.
-
-PHASE 3:
-
-Implement Monday.com server integration.
-
-PHASE 4:
-
-Implement normalization.
-
-PHASE 5:
-
-Implement deterministic analytics.
-
-PHASE 6:
-
-Implement Gemini intent extraction.
-
-PHASE 7:
-
-Implement conversational responses.
-
-PHASE 8:
-
-Implement leadership update.
-
-PHASE 9:
-
-Implement error handling and testing.
-
-PHASE 10:
-
-Polish UI.
-
-PHASE 11:
-
-Prepare README and Decision Log.
-
-PHASE 12:
-
-Run complete end-to-end testing.
-
-35. FINAL INTERVIEW-QUALITY REVIEW
-
-Before declaring the application finished, review it as if you are a senior Skylark Drones interviewer.
-
-Ask:
-
-Is Monday.com really being queried dynamically?
-
-Is any business data hardcoded?
-
-Can I explain the architecture?
-
-Are financial calculations deterministic?
-
-Can the system handle missing data?
-
-Can it explain data-quality problems?
-
-Can it handle ambiguous questions?
-
-Does Gemini have too much authority?
-
-What happens if Monday.com fails?
-
-What happens if Gemini fails?
-
-Are secrets protected?
-
-Does the UI look professional?
-
-Is the application useful to a founder?
-
-Can another developer understand the code?
-
-Does the README demonstrate engineering maturity?
-
-Does the Decision Log demonstrate thoughtful trade-offs?
-
-Fix high-impact issues before considering the project complete.
-
-36. DEFINITION OF DONE
-
-The application is complete only when:
-
-Monday.com integration exists
-
-Both boards can be read dynamically
-
-No source business data is hardcoded
-
-Data normalization exists
-
-Null handling exists
-
-Date normalization exists
-
-Numeric normalization exists
-
-Sector/text normalization exists
-
-Data-quality reporting exists
-
-Pipeline calculations work
-
-Work-order calculations work
-
-Cross-board analysis works where applicable
-
-Gemini understands natural-language queries
-
-Structured intent is validated
-
-Ambiguous questions trigger clarification
-
-Gemini does not determine numerical truth
-
-Business insights are generated
-
-Leadership updates work
-
-UI is polished
-
-Error states work
-
-Loading states work
-
-Tests exist for critical calculations
-
-README exists
-
-Decision Log exists
-
-Secrets are secure
-
-GitHub-ready source code exists
-
-Application is deployable
-
-End-to-end testing is complete
-
-START NOW
-
-First inspect all files and datasets available to this project.
-
-Do not invent the dataset schema.
-
-Before implementing complex features, report:
-
-What files/data are available.
-
-The actual Deals schema.
-
-The actual Work Orders schema.
-
-Important data-quality problems.
-
-The proposed normalized schema.
-
-The implementation plan.
-
-Then begin implementation phase by phase.
-
-Build this as a serious senior-engineer submission, not a generic AI-generated demo.
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://skylark-insight-navigator.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/7aa10e3f-5045-4559-92d8-fb92b027579b).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
 ```
+┌──────────────────────────────────────────────────────────────┐
+│ Client (React 19, TanStack Router/Query, Tailwind v4)        │
+│  routes: /  /pipeline  /work-orders  /ai-analyst             │
+│          /leadership-update  /data-sources                   │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ createServerFn (typed RPC)
+┌──────────────────────────▼───────────────────────────────────┐
+│ Server (TanStack Start server functions, edge runtime)       │
+│                                                              │
+│  src/lib/bi.functions.ts          ← thin RPC wrappers        │
+│  src/lib/bi/agent.server.ts       ← orchestration            │
+│  src/lib/bi/intent.ts             ← intent schema (Zod)      │
+│  src/lib/gemini.server.ts         ← Gemini via AI gateway    │
+│  src/lib/monday.server.ts         ← Monday GraphQL client    │
+│  src/lib/bi/dataService.server.ts ← retrieval + 60s cache    │
+│  src/lib/bi/mapper.ts             ← schema discovery/mapping │
+│  src/lib/bi/normalize.ts          ← values, dates, sectors   │
+│  src/lib/bi/analytics.ts          ← deterministic metrics    │
+│  src/lib/bi/dataQuality.ts        ← data-quality scoring     │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ GraphQL (read-only queries only)
+                    ┌──────▼──────┐
+                    │ Monday.com  │
+                    └─────────────┘
+```
+
+The canonical data models (`src/lib/bi/types.ts`) are the contract: nothing outside the mapper touches a raw Monday payload, so board schema changes are absorbed in one place.
+
+## 6. System Flow
+
+```
+User question
+    ↓
+Conversational Interface (/ai-analyst)
+    ↓
+Intent Detection — Gemini extracts a Zod-validated structured intent
+    (boards, metrics, sector filter, time range, comparison, etc.)
+    ↓
+Monday.com Data Retrieval — paginated GraphQL reads of both boards
+    (60-second server-side cache; timestamped snapshots)
+    ↓
+Data Normalization — currency parsing (incl. Lakh/Crore), date parsing,
+    sector grouping, status classification, header/echo row removal
+    ↓
+Deterministic Business Analytics — totals, weighted pipeline, win rate,
+    sector/stage breakdowns, delay flags, data-quality tallies
+    ↓
+Business Metrics (typed, auditable payload)
+    ↓
+AI Executive Interpretation — Gemini writes prose FROM the computed
+    metrics only; system prompt forbids inventing numbers
+    ↓
+Founder-level Response — narrative + figures + assumptions + caveats
+```
+
+**Deterministic (code):** every number — counts, sums, weighted pipeline, win rates, sector aggregations, date-range filtering, delay determination, data-quality counts.
+**Gemini (LLM):** understanding the question (intent extraction) and explaining the results (narrative). If the AI layer fails, the agent degrades gracefully and still returns the computed metrics.
+
+## 7. Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | TanStack Start v1 (SSR + typed server functions), React 19 |
+| Language | TypeScript (strict, `exactOptionalPropertyTypes`) |
+| Styling | Tailwind CSS v4, shadcn-style components, Lucide icons |
+| Charts | Recharts |
+| Data fetching | TanStack Query |
+| Validation | Zod |
+| AI | Google Gemini (`gemini-3.7-flash`) via the Lovable AI Gateway |
+| Data source | Monday.com GraphQL API (`2024-10`) |
+| Build | Vite 8, Nitro (Cloudflare Workers/edge target) |
+
+## 8. Monday.com Integration
+
+`src/lib/monday.server.ts` is a **read-only** GraphQL client — the codebase contains no mutation path.
+
+- **Boards queried:** Deals board (`5030963052`) and Work Orders board (`5030962908`), supplied via environment variables.
+- **Pagination:** cursor-based `items_page` pagination, 100 items per page, with a hard cap of 50 pages (5,000 items/board) as a safety stop.
+- **Authentication:** API token sent as the `Authorization` header from server-side code only; the token never reaches the client bundle.
+- **Error handling:** typed `MondayError` with user-safe messages for auth failures (401/403), rate limiting (429/503, with exponential-backoff retry up to 2 attempts), missing boards, and malformed responses.
+- **Caching:** a 60-second in-memory cache (`dataService.server.ts`) prevents a multi-question session from hammering the API; every response carries its retrieval timestamp and a `fromCache` flag so stale data is never presented as live.
+
+## 9. Data Resilience & Normalization
+
+The mapper and normalizer (`mapper.ts`, `normalize.ts`) are built for messy real-world boards:
+
+- **Schema discovery:** columns are mapped to canonical fields by title heuristics and scoring, preferring business-titled columns over generic defaults; unmapped columns are reported in diagnostics rather than silently ignored.
+- **Currency parsing:** handles inconsistent formats including Indian numbering (Lakh/Crore) and free-text amounts; unparseable values become `null` plus a quality flag, never a guess.
+- **Date parsing:** tolerant of multiple formats (including GMT strings); boards without usable date columns cause time-range filters to be skipped *with an explicit caveat* rather than returning empty results.
+- **Probability:** normalized to 0–1 from numeric values or a qualitative ladder; the derivation basis (`numeric` / `qualitative` / `unreadable` / `missing`) is tracked per deal.
+- **Header/echo rows:** template rows imported from spreadsheets (rows that repeat column titles) are detected and excluded from business records, and the skip count is reconciled in diagnostics.
+- **Quality flags:** every record carries flags such as `missing_value`, `missing_probability`, `missing_close_date`, `missing_sector`, `unknown_status`, `duplicate_record`, which feed the data-quality report.
+- **Source facts vs. interpretation:** each mapped field retains its raw value alongside the normalized value, so every business interpretation is traceable to source data.
+
+## 10. Query Understanding
+
+Questions are converted by Gemini into a structured, Zod-validated intent (`src/lib/bi/intent.ts`): which boards to query, which metrics to compute, sector/time-range filters, and whether a comparison or clarification is needed. Validation failures fall back to a safe default rather than crashing. The agent deliberately avoids inventing filters for plain count questions, and asks a clarifying question (with selectable options) when intent is genuinely ambiguous.
+
+## 11. Business Intelligence Engine
+
+`src/lib/bi/analytics.ts` computes, deterministically:
+
+- **Pipeline:** total and weighted pipeline value, deal counts, breakdowns by sector and stage, open/won/lost segmentation.
+- **Sales:** win rate, sector performance, deals needing attention.
+- **Operations:** work-order status distribution, completion aggregates where source data supports them, delay flags (only when status or dates actually evidence a delay), unmapped-status counts.
+- **Cross-board:** sector-level reconciliation of commercial pipeline vs. recorded work orders (see §12).
+
+## 12. Cross-Board Analysis
+
+Deals and Work Orders are queried and mapped **independently**, then combined on the normalized sector dimension for executive analysis.
+
+**Sector normalization:** `Energy` is a business grouping defined as **Powerline + Renewables** (with synonyms such as Transmission/Wind normalized into the group). Raw source values are normalized to this taxonomy *before* any business-level filtering or aggregation.
+
+**Representative results** (observed live from the supplied Monday.com dataset — retrieved dynamically, not hardcoded):
+
+- Energy: **57 deals**, **₹10.05 Cr** Energy pipeline, **137 work orders**, **₹92.22 Cr** recorded work-order value.
+- Overall: **180 deals**, **349 work-order board items** (347 business records after excluding 2 template/echo header rows — reconciled in diagnostics), **₹21.06 Cr** total pipeline.
+
+## 13. AI/Gemini Usage
+
+Gemini is used for exactly two responsibilities:
+
+1. **Intent extraction** — question → structured query plan (JSON, schema-validated).
+2. **Narrative generation** — computed metrics → executive prose.
+
+The model receives an already-computed analytics payload and is instructed never to invent figures; source-status semantics caveats are injected into its context so the narrative distinguishes commercial labels from operational reality. Gateway failures (auth, rate limit, credits, malformed output) are mapped to typed errors, and the agent returns the deterministic metrics with a "narrative unavailable" note instead of failing the whole answer.
+
+## 14. Data Quality & Governance
+
+The agent communicates limitations instead of filling gaps:
+
+- Missing probability → weighted pipeline is flagged as unreliable for the affected deals.
+- Missing close dates → time-based forecasting is limited and caveated.
+- Missing execution fields → delivery-progress analysis is reported as not determinable.
+- Unmapped sectors/statuses → surfaced as caveats with their raw values and counts.
+
+A `DataQualityReport` (score + per-flag tallies) accompanies analytics payloads and is visible in the Data Sources panel alongside full board diagnostics.
+
+**Work-order status semantics:** the Work Orders board carries *commercial lifecycle* labels (Won, Dead, Open, On Hold) rather than execution statuses. The implementation therefore:
+
+- does **not** interpret `Won` as Completed;
+- does **not** interpret `Dead`/`Lost` as delivery failure;
+- classifies operationally ambiguous labels as **Unknown/Unmapped**, while retaining their commercial meaning separately;
+- reports delay only when status or date evidence supports it (`delayed`, `delayReason`, `delayDeterminable`);
+- treats missing completion percentages as "operational progress cannot be reliably calculated."
+
+Each work order carries `statusKind`, `statusConfidence`, and a plain-language `statusInterpretation` for auditability.
+
+## 15. Leadership Updates
+
+The `/leadership-update` route generates an executive briefing from the live snapshot: executive summary, sales/pipeline position, operational position, key risks, opportunities, recommended actions, and data-quality caveats. Recommendations are generated from the computed metrics and do not contradict source data; the briefing can be copied to the clipboard for distribution.
+
+## 16. Error Handling
+
+- Typed error classes (`MondayError`, `GeminiError`) with user-safe messages and retryability flags.
+- Rate-limit retries with exponential backoff on Monday.com reads.
+- Graceful AI degradation: metrics still render when narrative generation fails.
+- Setup detection: missing configuration renders a guided setup screen instead of a crash.
+- A global server error middleware renders a safe error page for unhandled failures.
+
+## 17. Security
+
+- All secrets are supplied via environment variables; **no API keys or tokens are hardcoded or committed**.
+- The Monday.com token is read from `process.env` inside server handlers only and never serialized to the client.
+- Monday.com access is **read-only** (queries only; no mutations exist in the codebase).
+- Server functions are protected by CSRF middleware (`src/start.ts`).
+- `.env` files must not be committed; share configuration via placeholders.
+
+## 18. Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `MONDAY_API_TOKEN` | Monday.com API token (server-side only) |
+| `MONDAY_DEALS_BOARD_ID` | Deals board ID (`5030963052`) |
+| `MONDAY_WORK_ORDERS_BOARD_ID` | Work Orders board ID (`5030962908`) |
+| `LOVABLE_API_KEY` | AI gateway key used for Gemini access |
+
+No real secret values are included in this repository.
+
+## 19. Monday.com Board Configuration
+
+| Board | Board ID | Role |
+|---|---|---|
+| Deals | `5030963052` | Commercial pipeline (180 records in the supplied dataset) |
+| Work Orders | `5030962908` | Work-order portfolio (349 board items) |
+
+Board IDs are configurable via environment variables; the configured IDs are authoritative for board roles. Column mapping is discovered dynamically from board schema, so reasonable column renames do not require code changes.
+
+## 20. Local Development Setup
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd <repository-name>
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment variables (see §18)
+#    create a local .env with the four variables listed above
+
+# 4. Start the development server
+npm run dev
+
+# 5. Production build
+npm run build
+
+# 6. Preview the production build locally
+npm run preview
+```
+
+Additional scripts: `npm run lint`, `npm run format`.
+
+## 21. Production Build & Deployment
+
+This is **not** a purely static frontend: the Monday.com integration and Gemini calls run in server-side functions. Deployment therefore requires a runtime that executes the TanStack Start/Nitro server output (the build targets a Cloudflare Workers-compatible edge runtime). The environment variables in §18 must be configured in the hosting environment. The live deployment is available at https://skylark-insight-navigator.lovable.app.
+
+## 22. Example Founder Queries
+
+- "How many deals are currently in the Deals board?"
+- "How is our pipeline looking?"
+- "How's our Energy pipeline looking this quarter?"
+- "Compare the Energy sales pipeline with Energy work orders."
+- "What are the biggest risks in our pipeline?"
+- "Which sectors have the strongest pipeline?"
+- "How many work orders are active?"
+- "Prepare a leadership update using the latest Deals and Work Orders data."
+
+## 23. Example Business Insights
+
+Representative output from the supplied dataset (all figures retrieved dynamically from Monday.com at query time):
+
+- 180 deals on the Deals board; 349 items on the Work Orders board (347 business records after header-row reconciliation).
+- ₹21.06 Cr total pipeline.
+- Energy (normalized from Powerline + Renewables): 57 deals, ₹10.05 Cr pipeline, 137 work orders, ₹92.22 Cr recorded work-order value.
+- Caveat example: work-order operational status is largely Unknown/Unmapped because the board carries commercial labels, so delivery-progress claims are withheld rather than inferred.
+
+## 24. Design Decisions & Trade-offs
+
+1. **Monday.com is the single source of truth** — no CSV/XLSX data is hardcoded anywhere.
+2. **Deterministic calculations for all financial/business metrics** — the LLM never performs arithmetic on raw data.
+3. **Gemini scoped to language tasks** — intent extraction and narrative only, keeping the system auditable.
+4. **Missing data is surfaced, not fabricated** — quality flags and caveats travel with every answer.
+5. **Source status semantics preserved** — ambiguous labels are classified Unknown/Unmapped instead of being force-mapped to operational buckets.
+6. **Dynamic schema discovery over fixed mapping** — more resilient to board changes, at the cost of heuristic complexity (mitigated by the diagnostics panel).
+7. **Short-TTL server cache** — reduces API load in multi-question sessions while keeping data demonstrably fresh.
+8. **Scope prioritization** — under the assignment's time constraint, effort went into a reliable end-to-end workflow and data correctness rather than breadth of features.
+
+## 25. Known Limitations
+
+- Many source records lack probability values, limiting the reliability of weighted pipeline figures (surfaced as caveats).
+- Missing/sparse close dates limit time-based forecasting; time filters are skipped with a caveat when a board lacks usable dates.
+- The Work Orders board lacks execution-status and completion fields, so operational progress and delay analysis is limited to what status/date evidence supports.
+- Column mapping relies on title heuristics; heavily renamed boards may need mapping adjustments (visible in diagnostics).
+- Dependence on Monday.com API availability and rate limits.
+- AI narrative depends on gateway availability/quota; the app degrades to metrics-only answers when unavailable.
+- The in-memory cache is per-instance and not shared across serverless instances.
+
+## 26. Future Improvements
+
+- Stronger schema discovery (embedding-based column matching).
+- Automated, historical data-quality scoring trends.
+- Configurable business taxonomies (sector groups, status semantics) via admin UI instead of code.
+- Richer historical trend analysis via scheduled snapshots.
+- Shared/distributed caching and cache invalidation hooks.
+- Observability: structured logging, tracing, and metric dashboards.
+- Automated test coverage (unit tests for normalization/analytics, integration tests against a Monday sandbox).
+- Authentication and role-based access control.
+- More advanced leadership reporting (scheduled digests, PDF export).
+- Anomaly detection for pipeline and operations outliers.
+
+## 27. AI Tools Used
+
+AI-assisted development was used throughout this project and is disclosed per the assignment guidelines:
+
+- **Lovable** (AI full-stack development environment) — primary development platform; the Lovable AI Gateway provides Gemini access at runtime.
+- **Google Gemini** — runtime intent extraction and narrative generation inside the application.
+
+All AI-generated code was reviewed, type-checked, and validated against live Monday.com data during development.
+
+## 28. Assignment Compliance Checklist
+
+| Requirement | Implementation |
+|---|---|
+| Hosted prototype | Implemented — https://skylark-insight-navigator.lovable.app |
+| GitHub repository | Implemented |
+| Monday.com integration | Implemented (GraphQL, read-only, paginated) |
+| Read-only access | Implemented — no mutation code paths exist |
+| Dynamic board data | Implemented — no hardcoded business data |
+| Data resilience | Implemented (normalization, quality flags, reconciliation) |
+| Query understanding | Implemented (Gemini intent extraction, Zod-validated) |
+| Business intelligence | Implemented (deterministic analytics engine) |
+| Cross-board analysis | Implemented (sector-normalized Deals × Work Orders) |
+| Conversational interface | Implemented (`/ai-analyst`) |
+| Leadership updates | Implemented (`/leadership-update`) |
+| Error handling | Implemented (typed errors, retries, graceful degradation) |
+| Decision log | Key decisions documented in §24 of this README |
+
+---
+
+*Developed under the assignment's time constraint, with emphasis on engineering reasoning, data correctness, resilience, and explicit trade-offs.*
