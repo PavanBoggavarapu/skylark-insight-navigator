@@ -190,6 +190,7 @@ export async function getBoardItems(config: MondayConfig, boardId: string): Prom
   let boardName = `Board ${boardId}`;
   let columns: RawColumn[] = [];
   const items: RawItem[] = [];
+  let pagesRetrieved = 0;
 
   for (let page = 0; page < MAX_PAGES; page++) {
     const data: BoardPageResponse = await mondayRequest<BoardPageResponse>(config, BOARD_QUERY, {
@@ -198,6 +199,7 @@ export async function getBoardItems(config: MondayConfig, boardId: string): Prom
       cursor,
     });
 
+    pagesRetrieved = page + 1;
     const board = data.boards?.[0];
     if (!board) {
       throw new MondayError(
@@ -231,5 +233,5 @@ export async function getBoardItems(config: MondayConfig, boardId: string): Prom
     if (!cursor) break;
   }
 
-  return { id: boardId, name: boardName, columns, items };
+  return { id: boardId, name: boardName, columns, items, pagesRetrieved };
 }
