@@ -37,6 +37,11 @@ export function DataQualityPanel({ report }: { report: DataQualityReport }) {
         </ul>
       )}
 
+      <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+        <span className="font-medium text-foreground/70">Methodology:</span> {report.methodology} Currently{" "}
+        {report.scoreInputs.cleanRecords} of {report.scoreInputs.totalRecords} records are flag-free.
+      </p>
+
       {report.caveats.length > 0 ? (
         <div className="mt-4 rounded-lg border border-border bg-background/50 p-3">
           <p className="text-[11px] font-medium tracking-[0.09em] text-muted-foreground uppercase">
