@@ -455,7 +455,7 @@ export function mapWorkOrdersBoard(
     role: "work_orders",
     boardId: board.id,
     boardName: board.name,
-    itemsRetrieved: workOrders.length,
+    itemsRetrieved: board.items.length,
     pagesRetrieved: board.pagesRetrieved,
     rowsSkipped: skipped,
     retrievedAt,
