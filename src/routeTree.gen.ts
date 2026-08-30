@@ -14,6 +14,7 @@ import { Route as AiAnalystRouteImport } from './routes/ai-analyst'
 import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as LeadershipUpdateRouteImport } from './routes/leadership-update'
 import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as WorkOrdersRouteImport } from './routes/work-orders'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const PipelineRoute = PipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkOrdersRoute = WorkOrdersRouteImport.update({
   id: '/work-orders',
   path: '/work-orders',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/data-sources': typeof DataSourcesRoute
   '/leadership-update': typeof LeadershipUpdateRoute
   '/pipeline': typeof PipelineRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/data-sources': typeof DataSourcesRoute
   '/leadership-update': typeof LeadershipUpdateRoute
   '/pipeline': typeof PipelineRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/data-sources': typeof DataSourcesRoute
   '/leadership-update': typeof LeadershipUpdateRoute
   '/pipeline': typeof PipelineRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/data-sources'
     | '/leadership-update'
     | '/pipeline'
+    | '/sitemap.xml'
     | '/work-orders'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/data-sources'
     | '/leadership-update'
     | '/pipeline'
+    | '/sitemap.xml'
     | '/work-orders'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/data-sources'
     | '/leadership-update'
     | '/pipeline'
+    | '/sitemap.xml'
     | '/work-orders'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   DataSourcesRoute: typeof DataSourcesRoute
   LeadershipUpdateRoute: typeof LeadershipUpdateRoute
   PipelineRoute: typeof PipelineRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WorkOrdersRoute: typeof WorkOrdersRoute
 }
 
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/work-orders': {
       id: '/work-orders'
       path: '/work-orders'
@@ -161,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   DataSourcesRoute: DataSourcesRoute,
   LeadershipUpdateRoute: LeadershipUpdateRoute,
   PipelineRoute: PipelineRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WorkOrdersRoute: WorkOrdersRoute,
 }
 export const routeTree = rootRouteImport
