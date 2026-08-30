@@ -61,14 +61,28 @@ function WorkOrdersPage() {
         <div className="space-y-5">
           <KpiGrid>
             <KpiCard label="Total work orders" value={formatCount(ops.total)} icon={HardHat} />
-            <KpiCard label="Active" value={formatCount(ops.active)} icon={HardHat} tone="success" />
+            <KpiCard
+              label="Active"
+              value={ops.executionDataAvailable ? formatCount(ops.active) : "Unknown"}
+              sublabel={ops.executionDataAvailable ? undefined : "No execution status on source board"}
+              icon={HardHat}
+              tone={ops.executionDataAvailable ? "success" : "default"}
+            />
             <KpiCard
               label="Delayed"
-              value={formatCount(ops.delayed)}
+              value={ops.delayDeterminableCount === 0 ? "Undeterminable" : formatCount(ops.delayed)}
+              sublabel={
+                ops.delayDeterminableCount === 0 ? "No execution status or end dates recorded" : undefined
+              }
               icon={TriangleAlert}
               tone={ops.delayed > 0 ? "warning" : "default"}
             />
-            <KpiCard label="Completed" value={formatCount(ops.completed)} icon={CheckCircle2} />
+            <KpiCard
+              label="Completed"
+              value={ops.executionDataAvailable ? formatCount(ops.completed) : "Unknown"}
+              sublabel={ops.executionDataAvailable ? undefined : "\"Won\" is a commercial status, not delivery"}
+              icon={CheckCircle2}
+            />
             <KpiCard
               label="Avg. completion"
               value={formatCompletion(ops.averageCompletion)}
@@ -77,12 +91,41 @@ function WorkOrdersPage() {
             />
           </KpiGrid>
 
+          {ops.semanticsCaveats.length > 0 ? (
+            <div className="panel border-warning/40 bg-warning/5 p-5">
+              <h2 className="font-display text-sm font-semibold tracking-tight">Data semantics caveats</h2>
+              <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+                {ops.semanticsCaveats.map((c) => (
+                  <li key={c} className="flex gap-2">
+                    <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
+                    <span>{c}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 lg:grid-cols-2">
-            <SectionCard title="Status mix" description="Work orders grouped by normalized status.">
+            <SectionCard
+              title="Status mix"
+              description="Normalized operational status. Labels with no execution meaning stay Unknown/Unmapped."
+            >
               <StatusDonut data={ops.byStatus.map((s) => ({ key: s.key, value: s.value, count: s.count }))} />
             </SectionCard>
-            <SectionCard title="By sector" description="Project value delivered per sector.">
+            <SectionCard
+              title="Raw status labels"
+              description="Exactly as recorded in Monday.com, before normalization."
+            >
+              <HorizontalBars data={ops.byRawStatus} />
+            </SectionCard>
+            <SectionCard title="By sector" description="Project value recorded per sector.">
               <HorizontalBars data={ops.bySector} />
+            </SectionCard>
+            <SectionCard
+              title="Commercial status"
+              description="Deal-lifecycle labels. Never counted as execution progress."
+            >
+              <HorizontalBars data={ops.byCommercialStatus} />
             </SectionCard>
           </div>
 
@@ -103,8 +146,12 @@ function WorkOrdersPage() {
                   <dd className="metric-figure">{formatCount(ops.cancelled)}</dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Unrecognised status</dt>
+                  <dt className="text-muted-foreground">Unknown / unmapped status</dt>
                   <dd className="metric-figure">{formatCount(ops.unknownStatus)}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Commercial-only status</dt>
+                  <dd className="metric-figure">{formatCount(ops.commercialOnlyStatus)}</dd>
                 </div>
               </dl>
             </div>
