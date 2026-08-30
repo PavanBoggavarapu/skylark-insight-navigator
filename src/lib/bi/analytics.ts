@@ -90,6 +90,10 @@ export interface CrossBoardRow {
   workOrderCount: number;
   activeWorkOrders: number;
   delayedWorkOrders: number;
+  /** Work orders whose status carries no execution meaning. */
+  unmappedWorkOrders: number;
+  /** Work orders whose status is commercial only (Won/Dead/Open). */
+  commercialOnlyWorkOrders: number;
   executionRatio: number | null; // workOrderValue / pipelineValue
 }
 
@@ -101,6 +105,10 @@ export interface CrossBoardAnalysis {
   salesConcentration: number | null; // top sector share of pipeline
   operationsConcentration: number | null;
   bottleneckSectors: string[];
+  /** True when no work order carries an execution status at all. */
+  executionDataAvailable: boolean;
+  /** Semantics warnings that must accompany any cross-board narrative. */
+  semanticsCaveats: string[];
 }
 
 const UNSPECIFIED = "Unspecified";
@@ -462,6 +470,8 @@ export function computeCrossBoardAnalysis(deals: Deal[], workOrders: WorkOrder[]
       workOrderCount: w.length,
       activeWorkOrders: w.filter((x) => x.statusBucket === "active").length,
       delayedWorkOrders: w.filter((x) => x.statusBucket === "delayed").length,
+      unmappedWorkOrders: w.filter((x) => x.statusBucket === "unknown_unmapped").length,
+      commercialOnlyWorkOrders: w.filter((x) => x.statusKind === "commercial").length,
       executionRatio: pipelineValue > 0 ? round2(workOrderValue / pipelineValue) : null,
     };
   });
@@ -470,9 +480,24 @@ export function computeCrossBoardAnalysis(deals: Deal[], workOrders: WorkOrder[]
   const totalPipeline = sum(rows.map((r) => r.pipelineValue));
   const totalWo = sum(rows.map((r) => r.workOrderValue));
 
+  const executionDataAvailable = workOrders.some((w) => w.statusKind === "execution");
+  const semanticsCaveats: string[] = [];
+  if (workOrders.length > 0 && !executionDataAvailable) {
+    semanticsCaveats.push(
+      "Work-order statuses on the source board are commercial (Won/Dead/Open), not execution states. Execution ratios below compare recorded values only and must not be read as delivery progress.",
+    );
+  }
+  if (workOrders.length > 0 && !workOrders.some((w) => w.delayDeterminable)) {
+    semanticsCaveats.push(
+      "Delay is undeterminable for every work order (no execution status and no end dates), so bottleneck sectors cannot be evidenced from this data.",
+    );
+  }
+
   return {
     supported: true,
     rows,
+    executionDataAvailable,
+    semanticsCaveats,
     highPipelineLowExecution: rows
       .filter((r) => r.pipelineValue > 0 && (r.workOrderCount === 0 || (r.executionRatio ?? 0) < 0.25))
       .slice(0, 5)
