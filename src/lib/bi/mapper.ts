@@ -315,14 +315,20 @@ export function mapDealsBoard(
       deals.map((d) => ({ raw: d.stageRaw, normalized: d.stage, bucket: d.outcome })),
     ),
     validity: [
-      validity("value", deals.map((d) => ({ raw: d.rawValueRawHelper, ok: d.value !== null }))),
       validity(
-        "probability",
+        "deal value",
+        deals.map((d) => ({ raw: !d.dataQualityFlags.includes("missing_value"), ok: d.value !== null })),
+      ),
+      validity(
+        "closure probability",
         deals.map((d) => ({ raw: d.probabilityBasis !== "missing", ok: d.probability !== null })),
       ),
       validity(
         "expected close date",
-        deals.map((d) => ({ raw: d.expectedCloseDate !== null || d.stageRaw !== null, ok: d.expectedCloseDate !== null })),
+        deals.map((d) => ({
+          raw: !d.dataQualityFlags.includes("missing_close_date"),
+          ok: d.expectedCloseDate !== null,
+        })),
       ),
     ],
   };
@@ -441,9 +447,18 @@ export function mapWorkOrdersBoard(
     ),
     stageValues: [],
     validity: [
-      validity("value", workOrders.map((w) => ({ raw: true, ok: w.value !== null }))),
-      validity("start date", workOrders.map((w) => ({ raw: true, ok: w.startDate !== null }))),
-      validity("end date", workOrders.map((w) => ({ raw: true, ok: w.endDate !== null }))),
+      validity(
+        "order value",
+        workOrders.map((w) => ({ raw: !w.dataQualityFlags.includes("missing_value"), ok: w.value !== null })),
+      ),
+      validity(
+        "start date",
+        workOrders.map((w) => ({ raw: w.startDate !== null || !w.dataQualityFlags.includes("invalid_date"), ok: w.startDate !== null })),
+      ),
+      validity(
+        "end date",
+        workOrders.map((w) => ({ raw: w.endDate !== null || !w.dataQualityFlags.includes("invalid_date"), ok: w.endDate !== null })),
+      ),
     ],
   };
 
