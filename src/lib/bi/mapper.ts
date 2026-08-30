@@ -304,7 +304,7 @@ export function mapDealsBoard(
     role: "deals",
     boardId: board.id,
     boardName: board.name,
-    itemsRetrieved: deals.length,
+    itemsRetrieved: board.items.length,
     pagesRetrieved: board.pagesRetrieved,
     rowsSkipped: skipped,
     retrievedAt,
