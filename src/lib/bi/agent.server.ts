@@ -20,6 +20,7 @@ import {
 } from "./analytics";
 import { analyzeDataQuality } from "./dataQuality";
 import { loadDataSet } from "./dataService.server";
+import { normalizeSector } from "./normalize";
 import { intentJsonSchema, requiredDatasets, validateIntent, type BiIntent } from "./intent";
 import { resolveTimeRange } from "./timeRange";
 import type { AgentAnswer, AnalyticsPayload, SourceMetadata } from "./agentTypes";
@@ -136,16 +137,9 @@ export function computeForIntent(intent: BiIntent, data: DataSet): AnalyticsPayl
   };
 }
 
-/** Sector strings from the model are normalized the same way board data is. */
+/** Sector strings from the model go through the same normalizer as board data,
+ *  so "energy sector" typed by a founder matches the canonical "Energy". */
 function canonical(s: string): string {
-  // Reuses the sector normalizer so "energy sector" from the user matches "Energy".
-  // Imported lazily to keep this module's import graph small.
-
-  return normalizeSectorSafe(s);
-}
-
-import { normalizeSector } from "./normalize";
-function normalizeSectorSafe(s: string): string {
   return normalizeSector(s) ?? s;
 }
 
