@@ -441,6 +441,8 @@ export function computeCrossBoardAnalysis(deals: Deal[], workOrders: WorkOrder[]
       salesConcentration: null,
       operationsConcentration: null,
       bottleneckSectors: [],
+    executionDataAvailable: false,
+    semanticsCaveats: [],
     };
   }
   if (shared.length === 0) {
@@ -453,6 +455,8 @@ export function computeCrossBoardAnalysis(deals: Deal[], workOrders: WorkOrder[]
       salesConcentration: null,
       operationsConcentration: null,
       bottleneckSectors: [],
+    executionDataAvailable: false,
+    semanticsCaveats: [],
     };
   }
 
