@@ -10,8 +10,8 @@ export function ErrorState({
   retryable = true,
 }: {
   message: string;
-  onRetry?: () => void;
-  retryable?: boolean;
+  onRetry?: (() => void) | undefined;
+  retryable?: boolean | undefined;
 }) {
   return (
     <div className="panel flex flex-col items-start gap-3 border-destructive/35 bg-destructive/5 p-5">
@@ -84,7 +84,7 @@ export function SetupRequired({ missing }: { missing: string[] }) {
   );
 }
 
-export function PanelSkeleton({ rows = 4, title }: { rows?: number; title?: string }) {
+export function PanelSkeleton({ rows = 4, title }: { rows?: number; title?: boolean }) {
   return (
     <div className="panel p-5">
       {title ? <Skeleton className="mb-4 h-4 w-40" /> : null}
@@ -104,7 +104,7 @@ export function SectionCard({
   children,
 }: {
   title: string;
-  description?: string;
+  description?: string | undefined;
   action?: ReactNode;
   children: ReactNode;
 }) {

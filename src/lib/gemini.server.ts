@@ -44,7 +44,7 @@ async function callGemini(
 
   const body: Record<string, unknown> = { model: MODEL, messages };
   if (options.jsonSchema) {
-    body.response_format = {
+    body['response_format'] = {
       type: "json_schema",
       json_schema: {
         name: options.schemaName ?? "structured_output",

@@ -30,7 +30,8 @@ function TooltipBox({
   mode: "value" | "count";
 }) {
   if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
+  const d = payload[0]?.payload;
+  if (!d) return null;
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold">{d.key}</p>
