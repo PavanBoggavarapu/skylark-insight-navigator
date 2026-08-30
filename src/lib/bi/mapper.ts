@@ -314,6 +314,10 @@ export function mapDealsBoard(
     stageValues: tally(
       deals.map((d) => ({ raw: d.stageRaw, normalized: d.stage, bucket: d.outcome })),
     ),
+    sectorValues: tally(
+      deals.map((d) => ({ raw: d.sectorRaw, normalized: d.sector, bucket: d.sector ?? "unspecified" })),
+    ),
+    energyMatches: deals.filter((d) => d.sector === "Energy").length,
     validity: [
       validity(
         "deal value",
