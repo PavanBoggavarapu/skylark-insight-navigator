@@ -1,26 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** Temporary read-only diagnostics: board schema + raw value samples. No secrets returned. */
+/** Temporary verification endpoint (removed after the audit). No secrets returned. */
 export const Route = createFileRoute("/api/public/diag")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const { readMondayConfig, getBoardItems } = await import("@/lib/monday.server");
-        const cfg = readMondayConfig();
-        if (!cfg.ok) return Response.json({ ok: false, missing: cfg.missing }, { status: 400 });
-        const which = new URL(request.url).searchParams.get("board") ?? "deals";
-        const boardId = which === "wo" ? cfg.config.workOrdersBoardId : cfg.config.dealsBoardId;
-        const board = await getBoardItems(cfg.config, boardId);
-        const perColumn = board.columns.map((c) => {
-          const vals = board.items.map((i) => i.values[c.id]).filter((v) => v != null && String(v).trim() !== "");
-          const uniq = Array.from(new Set(vals.map((v) => String(v)))).slice(0, 15);
-          return { id: c.id, title: c.title, type: c.type, filled: vals.length, uniqueSample: uniq };
-        });
+      GET: async () => {
+        const { loadDataSet } = await import("@/lib/bi/dataService.server");
+        const { computePipelineMetrics, computeSalesMetrics, computeOperationsMetrics } = await import(
+          "@/lib/bi/analytics"
+        );
+        const { analyzeDataQuality } = await import("@/lib/bi/dataQuality");
+        const ds = await loadDataSet({ forceRefresh: true });
+        const p = computePipelineMetrics(ds.deals);
+        const s = computeSalesMetrics(ds.deals);
+        const o = computeOperationsMetrics(ds.workOrders);
         return Response.json({
-          boardId: board.id,
-          boardName: board.name,
-          items: board.items.length,
-          perColumn,
+          deals: ds.deals.length,
+          workOrders: ds.workOrders.length,
+          dealsBoard: ds.dealsBoard?.diagnostics,
+          woBoard: ds.workOrdersBoard?.diagnostics,
+          pipeline: {
+            total: p.totalPipeline,
+            weighted: p.weightedPipeline,
+            weightedFrom: p.weightedFromDeals,
+            excluded: p.dealsExcludedFromWeighted,
+            byStage: p.byStage.map((b) => [b.key, b.count, b.value]),
+            bySector: p.bySector.map((b) => [b.key, b.count, b.value]),
+          },
+          sales: { won: s.won, lost: s.lost, open: s.open, unknown: s.unknown, winRate: s.winRate },
+          ops: {
+            total: o.total,
+            active: o.active,
+            notStarted: o.notStarted,
+            completed: o.completed,
+            delayed: o.delayed,
+            onHold: o.onHold,
+            cancelled: o.cancelled,
+            unknown: o.unknownStatus,
+          },
+          quality: analyzeDataQuality(ds.deals, ds.workOrders).score,
         });
       },
     },
