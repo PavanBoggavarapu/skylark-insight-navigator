@@ -58,6 +58,22 @@ export interface OperationsMetrics {
   onHold: number;
   cancelled: number;
   unknownStatus: number;
+  /** Records whose raw label has no defensible execution meaning. */
+  unmappedStatus: number;
+  /** Records whose raw label is a commercial (deal-lifecycle) label. */
+  commercialOnlyStatus: number;
+  /** Raw Monday.com status labels, reported before any normalization. */
+  byRawStatus: { key: string; count: number; value: number }[];
+  /** Normalized operational (execution) states. */
+  byOperationalStatus: { key: string; count: number; value: number }[];
+  /** Commercial statuses, reported separately and never as execution. */
+  byCommercialStatus: { key: string; count: number; value: number }[];
+  /** True only when at least one record carries execution-meaningful data. */
+  executionDataAvailable: boolean;
+  /** Number of records for which a delay verdict can be evidenced at all. */
+  delayDeterminableCount: number;
+  /** Ambiguities the reader must know about before trusting these numbers. */
+  semanticsCaveats: string[];
   averageCompletion: number | null;
   completionSampleSize: number;
   totalValue: number;
@@ -299,13 +315,69 @@ export function computeOperationsMetrics(workOrders: WorkOrder[], today = new Da
     sectorMap.set(key, e);
   }
 
+  const tallyBy = (pick: (w: WorkOrder) => string | null) => {
+    const m = new Map<string, { key: string; count: number; value: number }>();
+    for (const w of workOrders) {
+      const key = pick(w);
+      if (key === null) continue;
+      const e = m.get(key) ?? { key, count: 0, value: 0 };
+      e.count += 1;
+      e.value += w.value ?? 0;
+      m.set(key, e);
+    }
+    return [...m.values()].map((e) => ({ ...e, value: round2(e.value) })).sort((a, b) => b.count - a.count);
+  };
+
+  const OPERATIONAL_LABELS: Record<WorkOrder["statusBucket"], string> = {
+    active: "Active",
+    completed: "Completed",
+    not_started: "Not started",
+    delayed: "Delayed",
+    on_hold: "On hold",
+    cancelled: "Cancelled",
+    unknown_unmapped: "Unknown/Unmapped",
+  };
+  const COMMERCIAL_LABELS: Record<string, string> = {
+    won: "Won (commercial)",
+    lost: "Lost/Dead (commercial)",
+    open: "Open (commercial)",
+    on_hold: "On hold (commercial)",
+  };
+
   const statusMap = new Map<string, { key: string; count: number; value: number }>();
   for (const w of workOrders) {
-    const key = w.status ?? "Unknown";
+    const key = OPERATIONAL_LABELS[w.statusBucket];
     const e = statusMap.get(key) ?? { key, count: 0, value: 0 };
     e.count += 1;
     e.value += w.value ?? 0;
     statusMap.set(key, e);
+  }
+
+  const commercialOnly = workOrders.filter((w) => w.statusKind === "commercial");
+  const executionRecords = workOrders.filter((w) => w.statusKind === "execution");
+  const unmapped = workOrders.filter((w) => w.statusBucket === "unknown_unmapped");
+
+  const semanticsCaveats: string[] = [];
+  if (workOrders.length > 0 && executionRecords.length === 0) {
+    semanticsCaveats.push(
+      "No work-order record carries an execution status. Every status on this board is a commercial deal-lifecycle label, so active, completed and delayed counts cannot be derived and are reported as Unknown/Unmapped.",
+    );
+  }
+  if (commercialOnly.length > 0) {
+    const won = commercialOnly.filter((w) => w.commercialStatus === "won").length;
+    const lost = commercialOnly.filter((w) => w.commercialStatus === "lost").length;
+    semanticsCaveats.push(
+      `${commercialOnly.length} work orders carry commercial statuses (${won} Won, ${lost} Dead/Lost). "Won" is not treated as completed and "Dead" is not treated as delivery value at risk — both are commercial states only.`,
+    );
+  }
+  if (workOrders.length > 0 && workOrders.every((w) => w.completionPercentage === null)) {
+    semanticsCaveats.push("No completion percentage is recorded on any work order, so progress cannot be stated.");
+  }
+  const delayDeterminableCount = workOrders.filter((w) => w.delayDeterminable).length;
+  if (workOrders.length > 0 && delayDeterminableCount === 0) {
+    semanticsCaveats.push(
+      "Delay cannot be evidenced for any work order: no record carries an execution status or an end date, so the delayed count is reported as 0 because it is undeterminable, not because delivery is on time.",
+    );
   }
 
   return {
@@ -316,7 +388,15 @@ export function computeOperationsMetrics(workOrders: WorkOrder[], today = new Da
     notStarted: count("not_started"),
     onHold: count("on_hold"),
     cancelled: count("cancelled"),
-    unknownStatus: count("unknown"),
+    unknownStatus: count("unknown_unmapped"),
+    unmappedStatus: unmapped.length,
+    commercialOnlyStatus: commercialOnly.length,
+    byRawStatus: tallyBy((w) => w.statusRaw ?? "(blank)"),
+    byOperationalStatus: tallyBy((w) => OPERATIONAL_LABELS[w.statusBucket]),
+    byCommercialStatus: tallyBy((w) => (w.commercialStatus ? COMMERCIAL_LABELS[w.commercialStatus]! : null)),
+    executionDataAvailable: executionRecords.length > 0,
+    delayDeterminableCount,
+    semanticsCaveats,
     averageCompletion: withCompletion.length
       ? round2(sum(withCompletion.map((w) => w.completionPercentage)) / withCompletion.length)
       : null,
@@ -329,7 +409,7 @@ export function computeOperationsMetrics(workOrders: WorkOrder[], today = new Da
       .map((e) => ({ ...e, value: round2(e.value) }))
       .sort((a, b) => b.count - a.count),
     needsAttention: workOrders
-      .filter((w) => delayedSet.has(w.id) || w.statusBucket === "on_hold" || w.statusBucket === "unknown")
+      .filter((w) => delayedSet.has(w.id) || w.statusBucket === "on_hold" || w.statusBucket === "unknown_unmapped")
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
       .slice(0, 10),
   };
