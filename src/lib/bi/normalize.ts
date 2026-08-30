@@ -370,6 +370,7 @@ export function classifyDealStatus(status: string | null): DealStatusBucket {
 export type WorkOrderStatusBucket =
   | "active"
   | "completed"
+  | "not_started"
   | "delayed"
   | "on_hold"
   | "cancelled"
@@ -386,7 +387,7 @@ export function classifyWorkOrderStatus(status: string | null): WorkOrderStatusB
   if (/(pause|hold|blocked|waiting|stalled|pending|details pending)/.test(k)) return "on_hold";
   if (/^(partial|partially)/.test(k)) return "active";
   if (/(complete|done|closed|delivered|finished)/.test(k)) return "completed";
-  if (/^not started$/.test(k) || /(yet to start|not yet started)/.test(k)) return "active";
+  if (/^not started$/.test(k) || /(yet to start|not yet started)/.test(k)) return "not_started";
   if (
     /(active|in progress|ongoing|executed|execution|working|executing|started|survey|processing|planned|scheduled|new|open)/.test(
       k,
