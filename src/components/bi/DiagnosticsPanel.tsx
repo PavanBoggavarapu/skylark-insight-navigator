@@ -144,6 +144,7 @@ export function DiagnosticsPanel({ diagnostics }: { diagnostics: BoardDiagnostic
     rawSectors: d.sectorValues.map((s) => ({ raw: s.raw, count: s.count })),
     normalizedSectors: bucketTotals(d.sectorValues),
     energyMatches: d.energyMatches,
+    workOrderStatusSemantics: d.statusSemantics,
   },
   null,
   2,
