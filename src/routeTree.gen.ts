@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiAnalystRouteImport } from './routes/ai-analyst'
+import { Route as DataSourcesRouteImport } from './routes/data-sources'
+import { Route as LeadershipUpdateRouteImport } from './routes/leadership-update'
+import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as WorkOrdersRouteImport } from './routes/work-orders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +26,86 @@ const AiAnalystRoute = AiAnalystRouteImport.update({
   path: '/ai-analyst',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataSourcesRoute = DataSourcesRouteImport.update({
+  id: '/data-sources',
+  path: '/data-sources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadershipUpdateRoute = LeadershipUpdateRouteImport.update({
+  id: '/leadership-update',
+  path: '/leadership-update',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkOrdersRoute = WorkOrdersRouteImport.update({
+  id: '/work-orders',
+  path: '/work-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-analyst': typeof AiAnalystRoute
+  '/data-sources': typeof DataSourcesRoute
+  '/leadership-update': typeof LeadershipUpdateRoute
+  '/pipeline': typeof PipelineRoute
+  '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-analyst': typeof AiAnalystRoute
+  '/data-sources': typeof DataSourcesRoute
+  '/leadership-update': typeof LeadershipUpdateRoute
+  '/pipeline': typeof PipelineRoute
+  '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ai-analyst': typeof AiAnalystRoute
+  '/data-sources': typeof DataSourcesRoute
+  '/leadership-update': typeof LeadershipUpdateRoute
+  '/pipeline': typeof PipelineRoute
+  '/work-orders': typeof WorkOrdersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ai-analyst'
+  fullPaths:
+    | '/'
+    | '/ai-analyst'
+    | '/data-sources'
+    | '/leadership-update'
+    | '/pipeline'
+    | '/work-orders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ai-analyst'
-  id: '__root__' | '/' | '/ai-analyst'
+  to:
+    | '/'
+    | '/ai-analyst'
+    | '/data-sources'
+    | '/leadership-update'
+    | '/pipeline'
+    | '/work-orders'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai-analyst'
+    | '/data-sources'
+    | '/leadership-update'
+    | '/pipeline'
+    | '/work-orders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiAnalystRoute: typeof AiAnalystRoute
+  DataSourcesRoute: typeof DataSourcesRoute
+  LeadershipUpdateRoute: typeof LeadershipUpdateRoute
+  PipelineRoute: typeof PipelineRoute
+  WorkOrdersRoute: typeof WorkOrdersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +124,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiAnalystRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data-sources': {
+      id: '/data-sources'
+      path: '/data-sources'
+      fullPath: '/data-sources'
+      preLoaderRoute: typeof DataSourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leadership-update': {
+      id: '/leadership-update'
+      path: '/leadership-update'
+      fullPath: '/leadership-update'
+      preLoaderRoute: typeof LeadershipUpdateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work-orders': {
+      id: '/work-orders'
+      path: '/work-orders'
+      fullPath: '/work-orders'
+      preLoaderRoute: typeof WorkOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiAnalystRoute: AiAnalystRoute,
+  DataSourcesRoute: DataSourcesRoute,
+  LeadershipUpdateRoute: LeadershipUpdateRoute,
+  PipelineRoute: PipelineRoute,
+  WorkOrdersRoute: WorkOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -21,10 +21,10 @@ export type TimeRangeType =
 
 export interface TimeRangeSpec {
   type: TimeRangeType;
-  quarter?: 1 | 2 | 3 | 4;
-  year?: number;
-  from?: string; // ISO yyyy-mm-dd
-  to?: string; // ISO yyyy-mm-dd
+  quarter?: 1 | 2 | 3 | 4 | null | undefined;
+  year?: number | null | undefined;
+  from?: string | null | undefined; // ISO yyyy-mm-dd
+  to?: string | null | undefined; // ISO yyyy-mm-dd
 }
 
 export interface ResolvedRange {

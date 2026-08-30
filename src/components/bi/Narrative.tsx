@@ -70,8 +70,8 @@ export function Narrative({ markdown }: { markdown: string }) {
     if (heading) {
       flushParagraph();
       flushList();
-      const level = heading[1].length;
-      const content = inline(heading[2], `h-${blocks.length}`);
+      const level = (heading[1] ?? "#").length;
+      const content = inline(heading[2] ?? "", `h-${blocks.length}`);
       blocks.push(
         level <= 2 ? (
           <h2 key={`h-${blocks.length}`}>{content}</h2>
@@ -88,7 +88,7 @@ export function Narrative({ markdown }: { markdown: string }) {
         flushList();
         list = { ordered: false, items: [] };
       }
-      list.items.push(bullet[1]);
+      list.items.push(bullet[1] ?? "");
       continue;
     }
     const numbered = line.match(/^\s*\d+[.)]\s+(.*)$/);
@@ -98,7 +98,7 @@ export function Narrative({ markdown }: { markdown: string }) {
         flushList();
         list = { ordered: true, items: [] };
       }
-      list.items.push(numbered[1]);
+      list.items.push(numbered[1] ?? "");
       continue;
     }
     flushList();

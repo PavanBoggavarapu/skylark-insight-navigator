@@ -7,8 +7,8 @@ export function ConnectionBadge({
   status,
   retrievedAt,
 }: {
-  status?: ConnectionStatus | null;
-  retrievedAt?: string | null;
+  status?: ConnectionStatus | null | undefined;
+  retrievedAt?: string | null | undefined;
 }) {
   if (!status) {
     return (

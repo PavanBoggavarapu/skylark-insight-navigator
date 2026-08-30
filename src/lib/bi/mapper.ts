@@ -71,6 +71,7 @@ function scoreMatch(title: string, keywords: string[]): number {
   const t = title.toLowerCase().trim();
   for (let i = 0; i < keywords.length; i++) {
     const k = keywords[i];
+    if (!k) continue;
     if (t === k) return 1000 - i;
     if (t.startsWith(k) || t.endsWith(k)) return 500 - i;
     if (t.includes(k)) return 100 - i;
