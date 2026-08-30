@@ -58,7 +58,14 @@ STYLE
 - 150-260 words unless the request is a leadership update.
 - Always include the data-quality caveats supplied in the payload when they affect a figure you quote.
 - End with 2-4 numbered, specific recommended actions.
-- If the payload shows zero records, say so plainly and do not speculate.`;
+- If the payload shows zero records, say so plainly and do not speculate.
+
+WORK ORDER STATUS SEMANTICS (mandatory)
+- "byRawStatus" is the raw Monday.com label distribution. "byOperationalStatus" is the normalized execution state. "byCommercialStatus" is deal-lifecycle only. Never merge the three.
+- A work order with commercial status "Won" is NOT completed and is NOT confirmed delivery. A "Dead" work order is NOT automatically value at risk — say explicitly when that is your interpretation rather than recorded data.
+- Never state that work is active, completed or delayed unless "byOperationalStatus" carries that count. "Unknown/Unmapped" must be reported as unknown.
+- A delayed count of 0 with "delayDeterminableCount": 0 means delay is undeterminable, not that delivery is on time. Say so.
+- Reproduce every entry of "statusSemanticsCaveats" in a final "## Data Semantics Caveats" section.`;
 
 const LEADERSHIP_SYSTEM = `${NARRATIVE_SYSTEM}
 
@@ -215,12 +222,18 @@ function payloadForModel(analytics: AnalyticsPayload) {
           completed: o.completed,
           delayed: o.delayed,
           onHold: o.onHold,
-          unknownStatus: o.unknownStatus,
+          unknownOrUnmappedStatus: o.unknownStatus,
+          commercialOnlyStatus: o.commercialOnlyStatus,
+          executionDataAvailable: o.executionDataAvailable,
+          delayDeterminableCount: o.delayDeterminableCount,
+          statusSemanticsCaveats: o.semanticsCaveats,
           averageCompletion: o.averageCompletion,
           completionSampleSize: o.completionSampleSize,
           totalValue: o.totalValue,
           bySector: o.bySector.slice(0, 8),
-          byStatus: o.byStatus.slice(0, 8),
+          byRawStatus: o.byRawStatus.slice(0, 12),
+          byOperationalStatus: o.byOperationalStatus.slice(0, 8),
+          byCommercialStatus: o.byCommercialStatus.slice(0, 8),
           needsAttention: o.needsAttention.slice(0, 5).map((w) => ({
             project: w.project,
             client: w.client,

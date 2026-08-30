@@ -22,10 +22,11 @@ import type {
   Deal,
   RawValueTally,
   WorkOrder,
+  WorkOrderStatusSemanticRow,
 } from "./types";
 import {
   classifyDealStatus,
-  classifyWorkOrderStatus,
+  classifyWorkOrderStatusSemantics,
   isBlank,
   normalizeSector,
   normalizeStage,
@@ -318,6 +319,7 @@ export function mapDealsBoard(
       deals.map((d) => ({ raw: d.sectorRaw, normalized: d.sector, bucket: d.sector ?? "unspecified" })),
     ),
     energyMatches: deals.filter((d) => d.sector === "Energy").length,
+    statusSemantics: [],
     validity: [
       validity(
         "deal value",
@@ -385,22 +387,26 @@ export function mapWorkOrdersBoard(
     const endDate = parseDate(endRaw);
     const completionPercentage = parseCompletion(completionRaw);
     const status = normalizeStage(statusRaw);
-    const statusBucket = classifyWorkOrderStatus(status);
+    const semantics = classifyWorkOrderStatusSemantics(status);
+    const statusBucket = semantics.operational;
 
-    // Delay rule: the business status says delayed, OR the expected end date
-    // has passed while the work order is neither completed nor cancelled.
-    // Missing end dates never produce a delay verdict.
+    // Delay rule: the execution status says delayed, OR the expected end date
+    // has passed while execution is known to be neither completed nor
+    // cancelled. A missing end date, or a status with no execution meaning,
+    // never produces a delay verdict — it makes delay undeterminable.
     const overdue =
       endDate !== null &&
       endDate < todayIso &&
       statusBucket !== "completed" &&
-      statusBucket !== "cancelled";
+      statusBucket !== "cancelled" &&
+      statusBucket !== "unknown_unmapped";
     const delayed = statusBucket === "delayed" || overdue;
+    const delayDeterminable = statusBucket === "delayed" || statusBucket !== "unknown_unmapped" || endDate !== null;
     const delayReason: WorkOrder["delayReason"] = statusBucket === "delayed" ? "status" : overdue ? "overdue" : null;
 
     pushIf(flags, sectorRaw === null, "missing_sector");
     pushIf(flags, statusRaw === null, "missing_status");
-    pushIf(flags, statusRaw !== null && statusBucket === "unknown", "unknown_status");
+    pushIf(flags, statusRaw !== null && statusBucket === "unknown_unmapped", "unknown_status");
     pushIf(flags, valueRaw === null, "missing_value");
     pushIf(flags, valueRaw !== null && value === null, "invalid_value");
     pushIf(flags, (startRaw !== null && startDate === null) || (endRaw !== null && endDate === null), "invalid_date");
@@ -427,8 +433,13 @@ export function mapWorkOrdersBoard(
       status,
       statusRaw,
       statusBucket,
+      commercialStatus: semantics.commercial,
+      statusKind: semantics.kind,
+      statusConfidence: semantics.confidence,
+      statusInterpretation: semantics.interpretation,
       delayed,
       delayReason,
+      delayDeterminable,
       value,
       startDate,
       endDate,
@@ -457,6 +468,7 @@ export function mapWorkOrdersBoard(
       workOrders.map((w) => ({ raw: w.sectorRaw, normalized: w.sector, bucket: w.sector ?? "unspecified" })),
     ),
     energyMatches: workOrders.filter((w) => w.sector === "Energy").length,
+    statusSemantics: statusSemanticRows(workOrders),
     validity: [
       validity(
         "order value",
@@ -500,4 +512,31 @@ export function detectBoardRole(board: RawBoard): "deals" | "work_orders" {
   if (has("nature of work")) woScore += 1;
   if (has("work order")) woScore += 1;
   return woScore > dealScore ? "work_orders" : "deals";
+}
+
+/**
+ * Raw work-order status label -> operational mapping -> interpretation.
+ * Kept separate from the raw distribution so an ambiguous mapping is visible
+ * rather than hidden behind a bucket name.
+ */
+function statusSemanticRows(workOrders: WorkOrder[]): WorkOrderStatusSemanticRow[] {
+  const map = new Map<string, WorkOrderStatusSemanticRow>();
+  for (const w of workOrders) {
+    const raw = w.statusRaw ?? "(blank)";
+    const existing = map.get(raw);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    map.set(raw, {
+      raw,
+      count: 1,
+      kind: w.statusKind,
+      operational: w.statusBucket,
+      commercial: w.commercialStatus,
+      confidence: w.statusConfidence,
+      interpretation: w.statusInterpretation,
+    });
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count);
 }
