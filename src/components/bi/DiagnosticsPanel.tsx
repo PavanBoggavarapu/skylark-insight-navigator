@@ -37,12 +37,23 @@ export function DiagnosticsPanel({ diagnostics }: { diagnostics: BoardDiagnostic
       }
     >
       <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat label="Items retrieved" value={formatCount(d.itemsRetrieved)} />
+        <Stat label="Items returned by API" value={formatCount(d.itemsRetrieved)} />
         <Stat label="API pages" value={formatCount(d.pagesRetrieved)} />
         <Stat label="Header rows skipped" value={formatCount(d.rowsSkipped)} />
-        <Stat label="Columns mapped" value={formatCount(d.mappings.length)} />
+        <Stat label="Records analysed" value={formatCount(d.itemsRetrieved - d.rowsSkipped)} />
         <Stat label="Retrieved" value={formatTimestamp(d.retrievedAt)} />
       </div>
+
+      {d.rowsSkipped > 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Reconciliation: {formatCount(d.itemsRetrieved)} items returned by the Monday.com API across{" "}
+          {formatCount(d.pagesRetrieved)} paginated requests, minus {formatCount(d.rowsSkipped)} template/header row
+          {d.rowsSkipped === 1 ? "" : "s"} whose cells repeat their own column titles (e.g. a row whose cells read
+          &ldquo;Deal Stage&rdquo;, &ldquo;Sector/service&rdquo;), leaving{" "}
+          {formatCount(d.itemsRetrieved - d.rowsSkipped)} business records. No business record is dropped.
+        </p>
+      ) : null}
+
 
       <div className="mt-4">
         <p className="text-[11px] font-medium tracking-[0.09em] text-muted-foreground uppercase">
