@@ -376,6 +376,17 @@ export function classifyDealStatus(status: string | null): DealStatusBucket {
   return "unknown";
 }
 
+/* ------------------------------------------------------------------ */
+/* Work-order status semantics                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Operational (execution) state of a work order.
+ *
+ * "unknown_unmapped" is a first-class result, not a failure: it means the
+ * source label carries no defensible execution meaning. It is used for
+ * commercial labels ("Won", "Dead", "Open") and for anything unrecognised.
+ */
 export type WorkOrderStatusBucket =
   | "active"
   | "completed"
@@ -383,27 +394,130 @@ export type WorkOrderStatusBucket =
   | "delayed"
   | "on_hold"
   | "cancelled"
-  | "unknown";
+  | "unknown_unmapped";
 
-/** Buckets a work-order status label. Unknown labels are reported as a data-quality issue. */
-export function classifyWorkOrderStatus(status: string | null): WorkOrderStatusBucket {
-  if (!status) return "unknown";
+/** Commercial (deal-lifecycle) meaning of a label, kept separate from execution. */
+export type WorkOrderCommercialStatus = "won" | "lost" | "open" | "on_hold" | null;
+
+export interface WorkOrderStatusSemantics {
+  /** Category of the source label itself. */
+  kind: "execution" | "commercial" | "blank" | "unrecognised";
+  /** Execution state, only when the label justifies one. */
+  operational: WorkOrderStatusBucket;
+  /** Commercial state, only when the label is a deal-lifecycle label. */
+  commercial: WorkOrderCommercialStatus;
+  /** Confidence in the operational mapping. */
+  confidence: "high" | "medium" | "none";
+  /** Plain-language note stating what the label does and does not prove. */
+  interpretation: string;
+}
+
+/**
+ * Documented normalization layer for Work Order status.
+ *
+ * Design rules (audited against the live Monday.com board):
+ * 1. The raw label is always preserved by the caller; this function never
+ *    rewrites it.
+ * 2. A label is mapped to an execution state ONLY when the wording describes
+ *    execution ("In Progress", "Completed", "Delayed", "Not Started", ...).
+ * 3. Commercial deal-lifecycle labels — "Won", "Lost", "Dead", "Open" — are
+ *    NOT execution states. A won deal proves an order was booked, not that
+ *    any field work started, progressed or finished. They are recorded as
+ *    commercial status with operational = "unknown_unmapped".
+ * 4. "Dead" means the commercial opportunity is closed-lost. Calling the
+ *    associated value "at risk" is an interpretation, never a fact, so the
+ *    interpretation text says so explicitly.
+ * 5. Anything unrecognised stays "unknown_unmapped" rather than being forced
+ *    into a bucket.
+ */
+export function classifyWorkOrderStatusSemantics(status: string | null): WorkOrderStatusSemantics {
+  if (!status || status.trim() === "") {
+    return {
+      kind: "blank",
+      operational: "unknown_unmapped",
+      commercial: null,
+      confidence: "none",
+      interpretation: "No status recorded on the source record; execution state is unknown.",
+    };
+  }
   const k = status.toLowerCase().trim();
+
+  // --- Execution wording: mapping is justified by the label itself. ---
   // Order matters: "Partial Completed" and "Not Started" must not fall into
   // the generic "complete"/"started" branches.
-  if (/(delay|overdue|behind|slipped|at risk)/.test(k)) return "delayed";
-  // "Pause / struck" is a hold, not a cancellation — check holds first.
-  if (/(pause|hold|blocked|waiting|stalled|pending|struck|stuck)/.test(k)) return "on_hold";
-  if (/(cancel|abandon|terminated|dropped|dead)/.test(k)) return "cancelled";
-  if (/^(partial|partially)/.test(k)) return "active";
-  if (/(complete|done|closed|delivered|finished)/.test(k)) return "completed";
-  if (/^not started$/.test(k) || /(yet to start|not yet started)/.test(k)) return "not_started";
-  if (
-    /(active|in progress|ongoing|executed|execution|working|executing|started|survey|processing|planned|scheduled|new|open)/.test(
-      k,
-    )
-  ) {
-    return "active";
+  if (/(delay|overdue|behind schedule|slipped)/.test(k)) {
+    return exec("delayed", "high", "Source label explicitly reports the execution as delayed.");
   }
-  return "unknown";
+  if (/(pause|on hold|struck|stuck|blocked|waiting|stalled)/.test(k) && !/^on hold$/.test(k)) {
+    return exec("on_hold", "high", "Source label explicitly reports execution as paused or blocked.");
+  }
+  if (/^(partial|partially)/.test(k)) {
+    return exec("active", "medium", "Partial completion implies execution is under way but not finished.");
+  }
+  if (/(complete|delivered|finished|handed over|done)/.test(k)) {
+    return exec("completed", "high", "Source label explicitly reports execution as finished.");
+  }
+  if (/^not started$/.test(k) || /(yet to start|not yet started)/.test(k)) {
+    return exec("not_started", "high", "Source label explicitly reports execution has not begun.");
+  }
+  if (/(in progress|ongoing|executing|execution|under execution|survey|processing|mobilis)/.test(k)) {
+    return exec("active", "high", "Source label explicitly describes work in execution.");
+  }
+  if (/(cancel|abandon|terminated|scrapped)/.test(k)) {
+    return exec("cancelled", "high", "Source label explicitly reports the work as cancelled.");
+  }
+
+  // --- Commercial wording: NOT an execution state. ---
+  if (/^(won|closed won|order received|awarded|signed)$/.test(k)) {
+    return commercialStatus(
+      "won",
+      'Commercial label: the deal was won. It does not state whether delivery has started, is running or is complete, so execution state stays "Unknown/Unmapped".',
+    );
+  }
+  if (/^(dead|lost|closed lost|dropped|rejected|no bid)$/.test(k)) {
+    return commercialStatus(
+      "lost",
+      'Commercial label: the opportunity is closed-lost. Treating its value as "revenue at risk" is an interpretation, not a fact recorded in the source.',
+    );
+  }
+  if (/^(open|live|new|pipeline|working|active)$/.test(k)) {
+    return commercialStatus(
+      "open",
+      'Commercial label: the opportunity is still open. "Open" describes the sales record, not confirmed field execution, so execution state stays "Unknown/Unmapped".',
+    );
+  }
+  if (/^(on hold|hold|parked|frozen)$/.test(k)) {
+    return commercialStatus(
+      "on_hold",
+      "Commercial label: the opportunity is on hold. The source does not say whether any execution is paused.",
+    );
+  }
+
+  return {
+    kind: "unrecognised",
+    operational: "unknown_unmapped",
+    commercial: null,
+    confidence: "none",
+    interpretation: "Status value is not recognised by the normalization layer; left unmapped on purpose.",
+  };
+}
+
+function exec(
+  operational: WorkOrderStatusBucket,
+  confidence: "high" | "medium",
+  interpretation: string,
+): WorkOrderStatusSemantics {
+  return { kind: "execution", operational, commercial: null, confidence, interpretation };
+}
+
+function commercialStatus(
+  commercial: Exclude<WorkOrderCommercialStatus, null>,
+  interpretation: string,
+): WorkOrderStatusSemantics {
+  return { kind: "commercial", operational: "unknown_unmapped", commercial, confidence: "none", interpretation };
+}
+
+/** Back-compatible helper: the operational bucket only. */
+export function classifyWorkOrderStatus(status: string | null): WorkOrderStatusBucket {
+  return classifyWorkOrderStatusSemantics(status).operational;
 }
